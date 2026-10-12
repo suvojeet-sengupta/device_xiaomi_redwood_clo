@@ -1,0 +1,43 @@
+From 1536c2eea445888f810ac747e8a42f1bf386e304 Mon Sep 17 00:00:00 2001
+From: suvojeet-sengupta <suvojitsengupta21@gmail.com>
+Date: Mon, 12 Oct 2026 17:36:12 +0000
+Subject: [PATCH] Launcher3: Turn on double tap to sleep by default
+
+Double tapping empty space on the home screen turns the screen off
+out of the box. It can still be turned off in Home settings.
+
+Change-Id: Ie4d79f8eb37649b9365e30477cd5aa1dcec54138
+---
+ res/xml/launcher_preferences.xml           | 2 +-
+ src/com/android/launcher3/LauncherPrefs.kt | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/res/xml/launcher_preferences.xml b/res/xml/launcher_preferences.xml
+index 6e8ba7e122..fcdba22165 100644
+--- a/res/xml/launcher_preferences.xml
++++ b/res/xml/launcher_preferences.xml
+@@ -19,7 +19,7 @@
+     xmlns:launcher="http://schemas.android.com/apk/res-auto">
+ 
+     <SwitchPreferenceCompat
+-        android:defaultValue="false"
++        android:defaultValue="true"
+         android:key="pref_sleep_gesture"
+         android:persistent="true"
+         android:title="@string/pref_sleep_gesture_title"
+diff --git a/src/com/android/launcher3/LauncherPrefs.kt b/src/com/android/launcher3/LauncherPrefs.kt
+index 55cdcb9509..4460346895 100644
+--- a/src/com/android/launcher3/LauncherPrefs.kt
++++ b/src/com/android/launcher3/LauncherPrefs.kt
+@@ -267,7 +267,7 @@ constructor(@ApplicationContext private val encryptedContext: Context) {
+         @JvmField val ICON_SIZE = backedUpItem("pref_icon_size", 100)
+         @JvmField val SHOW_DESKTOP_LABELS = backedUpItem("pref_desktop_show_labels", true)
+         @JvmField val SHOW_DRAWER_LABELS = backedUpItem("pref_drawer_show_labels", true)
+-        @JvmField val SLEEP_GESTURE = backedUpItem("pref_sleep_gesture", false)
++        @JvmField val SLEEP_GESTURE = backedUpItem("pref_sleep_gesture", true)
+         @JvmField val WORKSPACE_LOCK = backedUpItem("pref_workspace_lock", false)
+         @JvmField
+         val PROMISE_ICON_IDS = nonRestorableItem(InstallSessionHelper.PROMISE_ICON_IDS, "")
+-- 
+2.43.0
+

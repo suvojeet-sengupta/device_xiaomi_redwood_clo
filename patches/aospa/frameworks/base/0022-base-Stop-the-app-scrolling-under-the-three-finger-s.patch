@@ -1,9 +1,3 @@
-core/res/res/values/config.xml:3169:    <dimen name="config_viewConfigurationTouchSlop">8dp</dimen>
-core/res/res/values/symbols.xml:585:  <java-symbol type="dimen" name="config_viewConfigurationTouchSlop" />
-34:    private final float mTouchSlop;
-50:        mTouchSlop = context.getResources().getDimensionPixelSize(
-51:                com.android.internal.R.dimen.config_viewConfigurationTouchSlop);
-110:                    pastSlop &= dy >= mTouchSlop;
 From cb7ccd07c0fca18fa34174e597105ac8da37f941 Mon Sep 17 00:00:00 2001
 From: suvojeet-sengupta <suvojitsengupta21@gmail.com>
 Date: Mon, 12 Oct 2026 17:12:45 +0000
