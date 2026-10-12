@@ -144,6 +144,27 @@ PRODUCT_PACKAGES += \
     android.hardware.boot-service.qti \
     android.hardware.boot-service.qti.recovery
 
+# Boot debugging: adb comes up without the authorization prompt (the screen
+# never gets past the logo), the kernel log goes into logcat and every boot's
+# logcat is kept in /data/misc/logd. Always on for userdebug/eng, where adbd
+# also starts as root; force it on a user build with REDWOOD_BOOT_DEBUG=true
+# (no root there: user adbd and sepolicy have no root shell).
+ifneq ($(REDWOOD_BOOT_DEBUG)$(filter userdebug eng,$(TARGET_BUILD_VARIANT)),)
+PRODUCT_PRODUCT_PROPERTIES += \
+    ro.adb.secure=0 \
+    persist.sys.usb.config=mtp,adb \
+    ro.logd.kernel=true \
+    persist.logd.size=16M \
+    persist.logd.logpersistd=logcatd \
+    persist.logd.logpersistd.buffer=all \
+    persist.logd.logpersistd.size=30
+
+ifneq ($(filter userdebug eng,$(TARGET_BUILD_VARIANT)),)
+PRODUCT_PRODUCT_PROPERTIES += \
+    service.adb.root=1
+endif
+endif
+
 # Camera
 PRODUCT_PACKAGES += \
     android.hardware.camera.provider@2.4-impl \
