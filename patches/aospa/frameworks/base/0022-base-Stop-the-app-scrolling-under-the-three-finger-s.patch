@@ -174,7 +174,7 @@ index d915f3d3271b..605d90c587dc 100644
 +                if (pastSlop && !mPilfered) {
 +                    // All three fingers are going down, so this is the screenshot swipe.
 +                    // Cancel the touch for the app so it stops scrolling.
-+                    mInputManager.pilferPointers(mInputMonitor.getInputChannel().getToken());
++                    mInputMonitor.pilferPointers();
 +                    mPilfered = true;
 +                }
 +                if (pastDistance) {
