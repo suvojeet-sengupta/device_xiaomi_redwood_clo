@@ -86,6 +86,8 @@ The tree carries the source patches redwood needs in `patches/`:
 `vendorsetup.sh` applies them automatically when you run
 `build/envsetup.sh` or `rom-build.sh`, so there's nothing to apply by hand,
 and they survive a `repo sync`.
+The ROM is found from the repo manifest; set `REDWOOD_ROM=aospa` or
+`REDWOOD_ROM=penguinos` before `. build/envsetup.sh` to pick it by hand.
 
 ## Building
 

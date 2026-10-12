@@ -7,19 +7,35 @@
 # Apply the source patches redwood needs. Patches in patches/common/ apply
 # to both ROMs, the ones in patches/aospa/ and patches/penguinos/ only to
 # that ROM. Patches that are already applied are skipped, so this is safe
-# to run on every envsetup.
+# to run on every envsetup. The ROM is found from the repo manifest; set
+# REDWOOD_ROM=aospa or REDWOOD_ROM=penguinos to pick it by hand.
 
 redwood_apply_patches() {
     local top="${T:-$(gettop)}"
     local device="$top/device/xiaomi/redwood"
     local rom patches patch dir subject
 
-    # PenguinOS keeps its own framework config in custom_config.xml
-    if [ -f "$top/frameworks/base/core/res/res/values/custom_config.xml" ]; then
-        rom=penguinos
-    else
-        rom=aospa
-    fi
+    case "$REDWOOD_ROM" in
+    aospa|penguinos)
+        rom="$REDWOOD_ROM"
+        ;;
+    "")
+        # PenguinOS adds penguin.xml to the manifest and its own repos;
+        # its frameworks/base also has custom_config.xml
+        if [ -f "$top/.repo/manifests/penguin.xml" ] ||
+                [ -d "$top/vendor/custom-preference" ] ||
+                [ -f "$top/frameworks/base/core/res/res/values/custom_config.xml" ]; then
+            rom=penguinos
+        else
+            rom=aospa
+        fi
+        ;;
+    *)
+        echo "redwood: unknown REDWOOD_ROM '$REDWOOD_ROM', use aospa or penguinos" >&2
+        return 1
+        ;;
+    esac
+    echo "redwood: applying the common and $rom patches" >&2
 
     for patches in "$device/patches/common" "$device/patches/$rom"; do
         [ -d "$patches" ] || continue
