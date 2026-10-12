@@ -190,6 +190,10 @@ vendor.display.vds_allow_hwc=1
 vendor.gralloc.disable_ubwc=0
 debug.sdm.support_writeback=0
 
+# LMK
+# The kernel kills with Simple LMK and has no psi for lmkd's monitors
+ro.vendor.lmk.force_inkernel_lmk=true
+
 # Media
 debug.stagefright.c2inputsurface=-1
 media.stagefright.thumbnail.prefer_hw_codecs=true

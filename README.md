@@ -29,9 +29,8 @@ This tree builds Paranoid Android `calcite` (Android 17) and PenguinOS
 
 ## What's in the tree
 
-- Kernel: prebuilt [SuvKernel](https://github.com/suvojeet-sengupta/android_kernel_xiaomi_sm7325/tree/suvkernel)
-  2.0 (5.4.295, the AtomX CLO kernel) with Qualcomm's WALT scheduler,
-  KernelSU-Next and SuSFS, from `device/xiaomi/redwood-kernel`
+- Kernel: prebuilt Vajra 3.1 (5.4.302) by genie1997, with KernelSU-Next
+  and SuSFS, from `device/xiaomi/redwood-kernel`
 - Vendor: extracted from stock HyperOS, in `vendor/xiaomi/redwood`
 - Camera: MIUI Camera, from `vendor/xiaomi/redwood-miuicamera`
 - Audio: Dolby Atmos, from `hardware/dolby`
