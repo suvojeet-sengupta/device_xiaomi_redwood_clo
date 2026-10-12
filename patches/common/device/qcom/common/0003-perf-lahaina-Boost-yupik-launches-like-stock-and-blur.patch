@@ -1,0 +1,71 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: suvojeet-sengupta <suvojitsengupta21@gmail.com>
+Date: Mon, 12 Oct 2026 11:28:29 +0000
+Subject: [PATCH] perf: lahaina: Boost yupik launches like stock and blur
+
+- The yupik cold launch boost only raised the CPUs. Raise the memory
+  buses, LLCC, L3 and storage clocks and keep the CPUs out of deep idle
+  for those 2 seconds too, as stock HyperOS does on yupik. Its
+  gpu_disable_gpu_nap is left out: this perf HAL doesn't support it.
+- SurfaceFlinger asks for EXPENSIVE_RENDERING while it composes a
+  background blur, but the power HAL only passes it on with
+  vendor.perf.expensive_rendering set, and yupik had no boost for it.
+  Set it and hold the little cluster at 1.3 GHz and the GPU at 450 MHz
+  or more while blur is on screen.
+---
+ .../configs/lahaina/perf/perfboostsconfig.xml     | 15 ++++++++++++++-
+ .../perf/configs/lahaina/perf/perfconfigstore.xml |  2 ++
+ 2 files changed, 16 insertions(+), 1 deletion(-)
+
+diff --git a/vendor/perf/configs/lahaina/perf/perfboostsconfig.xml b/vendor/perf/configs/lahaina/perf/perfboostsconfig.xml
+index 263761c1..9e0f3a39 100644
+--- a/vendor/perf/configs/lahaina/perf/perfboostsconfig.xml
++++ b/vendor/perf/configs/lahaina/perf/perfboostsconfig.xml
+@@ -54,10 +54,15 @@
+                       0x40800000, 1497, 0x40800100, 1516, 0x40800200, 1766" />
+ 
+        <!-- AOSPA Edit: Boost all CPUs to max frequency for main 2s app launch -->
++       <!-- redwood: and the memory buses, LLCC, L3, storage and CPU idle
++            like stock HyperOS does on yupik, minus its gpu_disable_gpu_nap,
++            which this perf HAL doesn't support -->
+        <Config
+            Id="0x00001081" Type="1" Enable="true" Timeout="2000" Target="yupik"
+            Resources="0x40C00000, 0x1, 0x40804000, 0xFFF, 0x40804100, 0xFFF, 0x40804200, 0xFFF,
+-                      0x40800000, 0xFFF, 0x40800100, 0xFFF, 0x40800200, 0xFFF" />
++                      0x40800000, 0xFFF, 0x40800100, 0xFFF, 0x40800200, 0xFFF,
++                      0x43018000, 0xFF, 0x43010000, 0xFF, 0x40400000, 0x1, 0x42C10000, 0x1,
++                      0x43430100, 0x1FC8, 0x43430000, 0x1FC8, 0x43400000, 0xFFFF" />
+ 
+     <!--app lauch boost (disabling packing)-->
+ 
+@@ -235,6 +240,14 @@
+            Resources="0x40804000, 0xFFF, 0x40804100, 0xFFF, 0x40804200, 0xFFF,
+                       0x40800000, 0xFFF, 0x40800100, 0xFFF, 0x40800200, 0xFFF" />
+ 
++    <!-- Expensive rendering, held while SurfaceFlinger composes a background
++         blur on the GPU -->
++        <!-- CPUBOOST_MIN_FREQ LITTLE Core resource opcode, value -->
++        <!-- GPU_MIN_FREQ resource opcode, value in MHz -->
++       <Config
++           Id="0x000010A5" Enable="true" Timeout="0" Target="yupik"
++           Resources="0x40800100, 1324, 0x4280C000, 0x1C2" />
++
+     <!--Vertical Scroll boost-->
+         <!-- LLCBW_MIN_FREQ resource opcode, value-->
+         <!-- CPUBOOST_MIN_FREQ BIG CORE resource opcode, value -->
+diff --git a/vendor/perf/configs/lahaina/perf/perfconfigstore.xml b/vendor/perf/configs/lahaina/perf/perfconfigstore.xml
+index 9cd2cbce..5c381915 100644
+--- a/vendor/perf/configs/lahaina/perf/perfconfigstore.xml
++++ b/vendor/perf/configs/lahaina/perf/perfconfigstore.xml
+@@ -61,6 +61,8 @@ ________________________________________________________________________________
+                 <Prop Name="vendor.perf.fps_switch.enable" Value="1" Target="yupik" />
+                 <Prop Name="ro.vendor.perf.gfl.tap_ignore_enable" Value="true" Target="yupik" />
+                 <Prop Name="ro.vendor.perf.splh" Value="hw" Target="yupik" />
++                <!-- Let SurfaceFlinger ask for a boost while it composes blur -->
++                <Prop Name="vendor.perf.expensive_rendering" Value="1" Target="yupik" />
+                 <Prop Name="ro.vendor.perf.gplaf" Value="true" Target="yupik" />
+                 <!-- AOSPA Edit: Disable memperfd
+                 <Prop Name="vendor.debug.enable.memperfd" Value="true" Target="katmai" /> -->
+-- 
+2.43.0
+
