@@ -1,0 +1,2337 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: kenway214 <kenway214@outlook.com>
+Date: Tue, 30 Jun 2026 08:24:30 +0530
+Subject: [PATCH 25/27] base: Introduce Obscura Manager [1/3]
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+credit
+HMA OSS | Furkan Karcıoğlu Furkan Karcıoğlu <45714956+frknkrc44@users.noreply.github.com>
+sandbox | rmp22 <195054967+rmp22@users.noreply.github.com>
+
+Co-authored-by: Furkan Karcıoğlu <45714956+frknkrc44@users.noreply.github.com>
+Co-authored-by: rmp22 <195054967+rmp22@users.noreply.github.com
+Change-Id: I3403e9e02db1381024c9668833aa940ff88664d8
+Signed-off-by: kenway214 <kenway214@outlook.com>
+(cherry picked from commit a7ccacc6d3e6b75d604d5d3667948f0e37db24d1)
+---
+ core/java/android/app/ObscuraManager.java     | 249 ++++++++++
+ .../android/app/SystemServiceRegistry.java    |  11 +
+ core/java/android/content/Context.java        |   5 +
+ .../internal/app/HiddenNotificationInfo.aidl  |   8 +
+ .../internal/app/HiddenNotificationInfo.java  |  81 ++++
+ .../app/IHiddenNotificationListener.aidl      |  13 +
+ .../android/internal/app/IObscuraManager.aidl |  44 ++
+ .../providers/settings/SettingsProvider.java  |  36 ++
+ .../AccessibilityManagerService.java          |  14 +-
+ .../android/server/AxExtServiceFactory.java   |   1 +
+ .../android/server/IAxExtServiceFactory.java  |   5 +
+ .../com/android/server/am/ProcessList.java    |  44 +-
+ .../android/server/compat/PlatformCompat.java |   7 +
+ .../InputMethodManagerService.java            |  44 +-
+ .../NotificationManagerService.java           |  31 ++
+ .../server/obscura/AppControlController.java  | 447 ++++++++++++++++++
+ .../obscura/HiddenNotificationController.java |  97 ++++
+ .../server/obscura/IObscuraService.java       |  20 +
+ .../server/obscura/ObscuraService.java        | 269 +++++++++++
+ .../obscura/SettingsSpoofController.java      |  30 ++
+ .../java/com/android/server/pm/Computer.java  |   1 +
+ .../com/android/server/pm/ComputerEngine.java | 226 ++++++++-
+ .../server/pm/LauncherAppsService.java        |   5 +
+ .../server/pm/ResolveIntentHelper.java        |   4 +-
+ .../android/server/wm/ActivityStarter.java    |  15 +
+ .../server/wm/ActivityTaskSupervisor.java     |   1 +
+ 26 files changed, 1691 insertions(+), 17 deletions(-)
+ create mode 100644 core/java/android/app/ObscuraManager.java
+ create mode 100644 core/java/com/android/internal/app/HiddenNotificationInfo.aidl
+ create mode 100644 core/java/com/android/internal/app/HiddenNotificationInfo.java
+ create mode 100644 core/java/com/android/internal/app/IHiddenNotificationListener.aidl
+ create mode 100644 core/java/com/android/internal/app/IObscuraManager.aidl
+ create mode 100644 services/core/java/com/android/server/obscura/AppControlController.java
+ create mode 100644 services/core/java/com/android/server/obscura/HiddenNotificationController.java
+ create mode 100644 services/core/java/com/android/server/obscura/IObscuraService.java
+ create mode 100644 services/core/java/com/android/server/obscura/ObscuraService.java
+ create mode 100644 services/core/java/com/android/server/obscura/SettingsSpoofController.java
+
+diff --git a/core/java/android/app/ObscuraManager.java b/core/java/android/app/ObscuraManager.java
+new file mode 100644
+index 000000000000..1f3b601d5e83
+--- /dev/null
++++ b/core/java/android/app/ObscuraManager.java
+@@ -0,0 +1,249 @@
++/*
++ * SPDX-FileCopyrightText: 2026 kenway214
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++package android.app;
++
++import android.annotation.NonNull;
++import android.annotation.Nullable;
++import android.annotation.SystemService;
++import android.content.Context;
++import android.os.RemoteException;
++
++import com.android.internal.app.IHiddenNotificationListener;
++import com.android.internal.app.IObscuraManager;
++import com.android.internal.app.HiddenNotificationInfo;
++
++import java.util.Collections;
++import java.util.List;
++
++/** @hide */
++@SystemService(Context.OBSCURA_SERVICE)
++@SuppressWarnings("ReferencesHidden")
++public class ObscuraManager {
++
++    public static final String SETTING_OBSCURA_CONFIG = "obscura_config";
++
++    public static final int GID_INET = 3003;
++    public static final int GID_SDCARD_RW = 1015;
++    public static final int GID_MEDIA_RW = 1023;
++    public static final int GID_EXTERNAL_STORAGE = 1077;
++    public static final int GID_EXT_DATA_RW = 1078;
++    public static final int GID_EXT_OBB_RW = 1079;
++
++    public static final int[] STORAGE_GIDS = {
++            GID_SDCARD_RW, GID_MEDIA_RW, GID_EXTERNAL_STORAGE,
++            GID_EXT_DATA_RW, GID_EXT_OBB_RW
++    };
++
++    private final Context mContext;
++    private final IObscuraManager mService;
++
++    public ObscuraManager(@NonNull Context context, @NonNull IObscuraManager service) {
++        mContext = context;
++        mService = service;
++    }
++
++    public boolean isPackageHidden(@NonNull String packageName) {
++        try {
++            return mService.isPackageHidden(packageName);
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    public void setPackageHidden(@NonNull String packageName, boolean hidden) {
++        try {
++            mService.setPackageHidden(packageName, hidden);
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    public boolean isPackageLauncherHidden(@NonNull String packageName) {
++        try {
++            return mService.isPackageLauncherHidden(packageName);
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    public void setPackageLauncherHidden(@NonNull String packageName, boolean hidden) {
++        try {
++            mService.setPackageLauncherHidden(packageName, hidden);
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    @NonNull
++    public List<String> getHiddenPackages() {
++        try {
++            List<String> result = mService.getHiddenPackages();
++            return result != null ? result : Collections.emptyList();
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    @NonNull
++    public List<String> getLauncherHiddenPackages() {
++        try {
++            List<String> result = mService.getLauncherHiddenPackages();
++            return result != null ? result : Collections.emptyList();
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    @NonNull
++    public List<String> getLockablePackages() {
++        try {
++            List<String> result = mService.getLockablePackages();
++            return result != null ? result : Collections.emptyList();
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    public void registerHiddenNotificationListener(IHiddenNotificationListener listener) {
++        try {
++            mService.registerHiddenNotificationListener(listener);
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    public void unregisterHiddenNotificationListener(IHiddenNotificationListener listener) {
++        try {
++            mService.unregisterHiddenNotificationListener(listener);
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    public List<HiddenNotificationInfo> getHiddenNotifications() {
++        try {
++            return mService.getHiddenNotifications();
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    public void onHiddenNotificationPosted(HiddenNotificationInfo info) {
++        try {
++            mService.onHiddenNotificationPosted(info);
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    public void onHiddenNotificationRemoved(String key) {
++        try {
++            mService.onHiddenNotificationRemoved(key);
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    public boolean isPackageIsolated(@NonNull String packageName) {
++        try {
++            return mService.isPackageIsolated(packageName);
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    public void isolatePackage(@NonNull String packageName) {
++        try {
++            mService.isolatePackage(packageName);
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    public void unisolatePackage(@NonNull String packageName) {
++        try {
++            mService.unisolatePackage(packageName);
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    @NonNull
++    public List<String> getIsolatedPackages() {
++        try {
++            List<String> result = mService.getIsolatedPackages();
++            return result != null ? result : Collections.emptyList();
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    public void setRestrictedGids(@NonNull String packageName, int[] gids) {
++        try {
++            mService.setRestrictedGids(packageName, gids);
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    public int[] getRestrictedGids(@NonNull String packageName) {
++        try {
++            return mService.getRestrictedGids(packageName);
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    public boolean isDataIsolationEnabled(@NonNull String packageName) {
++        try {
++            return mService.isDataIsolationEnabled(packageName);
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    public void setDataIsolationEnabled(@NonNull String packageName, boolean enabled) {
++        try {
++            mService.setDataIsolationEnabled(packageName, enabled);
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    public boolean isSpoofSettingEnabled(@NonNull String packageName, @NonNull String settingKey) {
++        try {
++            return mService.isSpoofSettingEnabled(packageName, settingKey);
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    public void setSpoofSettingEnabled(@NonNull String packageName, @NonNull String settingKey, boolean enabled) {
++        try {
++            mService.setSpoofSettingEnabled(packageName, settingKey, enabled);
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    @NonNull
++    public List<String> getEnabledSpoofSettings(@NonNull String packageName) {
++        try {
++            return mService.getEnabledSpoofSettings(packageName);
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++
++    @Nullable
++    public String getSpoofedSetting(@NonNull String callingPackage, @NonNull String settingName) {
++        try {
++            return mService.getSpoofedSetting(callingPackage, settingName);
++        } catch (RemoteException e) {
++            throw e.rethrowFromSystemServer();
++        }
++    }
++}
+diff --git a/core/java/android/app/SystemServiceRegistry.java b/core/java/android/app/SystemServiceRegistry.java
+index f682041f3653..16a65bcee3e1 100644
+--- a/core/java/android/app/SystemServiceRegistry.java
++++ b/core/java/android/app/SystemServiceRegistry.java
+@@ -328,6 +328,7 @@ import com.android.internal.R;
+ import com.android.internal.annotations.GuardedBy;
+ import com.android.internal.app.IAppOpsService;
+ import com.android.internal.app.IBatteryStats;
++import com.android.internal.app.IObscuraManager;
+ import com.android.internal.app.ISoundTriggerService;
+ import com.android.internal.app.IVoiceInteractionManagerService;
+ import com.android.internal.appwidget.IAppWidgetService;
+@@ -1052,6 +1053,16 @@ public final class SystemServiceRegistry {
+                 return new AppOpsManager(ctx, service);
+             }});
+ 
++        registerService(Context.OBSCURA_SERVICE, ObscuraManager.class,
++                new CachedServiceFetcher<ObscuraManager>() {
++            @Override
++            public ObscuraManager createService(ContextImpl ctx) {
++                IBinder b = ServiceManager.getService(Context.OBSCURA_SERVICE);
++                if (b == null) return null;
++                IObscuraManager service = IObscuraManager.Stub.asInterface(b);
++                return new ObscuraManager(ctx.getOuterContext(), service);
++            }});
++
+         registerService(Context.CAMERA_SERVICE, CameraManager.class,
+                 new CachedServiceFetcher<CameraManager>() {
+             @Override
+diff --git a/core/java/android/content/Context.java b/core/java/android/content/Context.java
+index d9b688ae84ba..196f56a558f9 100644
+--- a/core/java/android/content/Context.java
++++ b/core/java/android/content/Context.java
+@@ -6316,6 +6316,11 @@ public abstract class Context {
+      */
+     public static final String APP_OPS_SERVICE = "appops";
+ 
++    /**
++     * @hide
++     */
++    public static final String OBSCURA_SERVICE = "obscura";
++
+     /**
+      * Use with {@link #getSystemService(String)} to retrieve a {@link android.app.role.RoleManager}
+      * for managing roles.
+diff --git a/core/java/com/android/internal/app/HiddenNotificationInfo.aidl b/core/java/com/android/internal/app/HiddenNotificationInfo.aidl
+new file mode 100644
+index 000000000000..fa9b77bfe777
+--- /dev/null
++++ b/core/java/com/android/internal/app/HiddenNotificationInfo.aidl
+@@ -0,0 +1,8 @@
++/*
++ * SPDX-FileCopyrightText: 2026 kenway214
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++package com.android.internal.app;
++
++parcelable HiddenNotificationInfo;
+diff --git a/core/java/com/android/internal/app/HiddenNotificationInfo.java b/core/java/com/android/internal/app/HiddenNotificationInfo.java
+new file mode 100644
+index 000000000000..463b1250abb1
+--- /dev/null
++++ b/core/java/com/android/internal/app/HiddenNotificationInfo.java
+@@ -0,0 +1,81 @@
++/*
++ * SPDX-FileCopyrightText: 2026 kenway214
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++package com.android.internal.app;
++
++import android.app.PendingIntent;
++import android.graphics.drawable.Icon;
++import android.os.Parcel;
++import android.os.Parcelable;
++
++public class HiddenNotificationInfo implements Parcelable {
++    public final String key;
++    public final String packageName;
++    public final Icon appIcon;
++    public final CharSequence title;
++    public final CharSequence text;
++    public final PendingIntent contentIntent;
++    public final long postTime;
++    public final int userId;
++
++    public HiddenNotificationInfo(
++            String key,
++            String packageName,
++            Icon appIcon,
++            CharSequence title,
++            CharSequence text,
++            PendingIntent contentIntent,
++            long postTime,
++            int userId) {
++        this.key = key;
++        this.packageName = packageName;
++        this.appIcon = appIcon;
++        this.title = title;
++        this.text = text;
++        this.contentIntent = contentIntent;
++        this.postTime = postTime;
++        this.userId = userId;
++    }
++
++    protected HiddenNotificationInfo(Parcel in) {
++        key = in.readString();
++        packageName = in.readString();
++        appIcon = in.readParcelable(Icon.class.getClassLoader(), Icon.class);
++        title = in.readCharSequence();
++        text = in.readCharSequence();
++        contentIntent = in.readParcelable(PendingIntent.class.getClassLoader(), PendingIntent.class);
++        postTime = in.readLong();
++        userId = in.readInt();
++    }
++
++    @Override
++    public void writeToParcel(Parcel dest, int flags) {
++        dest.writeString(key);
++        dest.writeString(packageName);
++        dest.writeParcelable(appIcon, flags);
++        dest.writeCharSequence(title);
++        dest.writeCharSequence(text);
++        dest.writeParcelable(contentIntent, flags);
++        dest.writeLong(postTime);
++        dest.writeInt(userId);
++    }
++
++    @Override
++    public int describeContents() {
++        return 0;
++    }
++
++    public static final Creator<HiddenNotificationInfo> CREATOR = new Creator<HiddenNotificationInfo>() {
++        @Override
++        public HiddenNotificationInfo createFromParcel(Parcel in) {
++            return new HiddenNotificationInfo(in);
++        }
++
++        @Override
++        public HiddenNotificationInfo[] newArray(int size) {
++            return new HiddenNotificationInfo[size];
++        }
++    };
++}
+diff --git a/core/java/com/android/internal/app/IHiddenNotificationListener.aidl b/core/java/com/android/internal/app/IHiddenNotificationListener.aidl
+new file mode 100644
+index 000000000000..1a491d304bbe
+--- /dev/null
++++ b/core/java/com/android/internal/app/IHiddenNotificationListener.aidl
+@@ -0,0 +1,13 @@
++/*
++ * SPDX-FileCopyrightText: 2026 kenway214
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++package com.android.internal.app;
++
++import com.android.internal.app.HiddenNotificationInfo;
++
++oneway interface IHiddenNotificationListener {
++    void onHiddenNotificationPosted(in HiddenNotificationInfo info);
++    void onHiddenNotificationRemoved(String key);
++}
+diff --git a/core/java/com/android/internal/app/IObscuraManager.aidl b/core/java/com/android/internal/app/IObscuraManager.aidl
+new file mode 100644
+index 000000000000..173ca16becba
+--- /dev/null
++++ b/core/java/com/android/internal/app/IObscuraManager.aidl
+@@ -0,0 +1,44 @@
++/*
++ * SPDX-FileCopyrightText: 2026 kenway214
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++package com.android.internal.app;
++
++import com.android.internal.app.IHiddenNotificationListener;
++import com.android.internal.app.HiddenNotificationInfo;
++
++interface IObscuraManager {
++    boolean isPackageHidden(String packageName);
++    void setPackageHidden(String packageName, boolean hidden);
++    boolean isPackageLauncherHidden(String packageName);
++    void setPackageLauncherHidden(String packageName, boolean hidden);
++
++    List<String> getHiddenPackages();
++    List<String> getLauncherHiddenPackages();
++    List<String> getLockablePackages();
++
++    void registerHiddenNotificationListener(IHiddenNotificationListener listener);
++    void unregisterHiddenNotificationListener(IHiddenNotificationListener listener);
++
++    List<HiddenNotificationInfo> getHiddenNotifications();
++    void onHiddenNotificationPosted(in HiddenNotificationInfo info);
++    void onHiddenNotificationRemoved(String key);
++
++    boolean isPackageIsolated(String packageName);
++    void isolatePackage(String packageName);
++    void unisolatePackage(String packageName);
++    List<String> getIsolatedPackages();
++
++    void setRestrictedGids(String packageName, in int[] gids);
++    int[] getRestrictedGids(String packageName);
++
++    boolean isSpoofSettingEnabled(String packageName, String settingKey);
++    void setSpoofSettingEnabled(String packageName, String settingKey, boolean enabled);
++    List<String> getEnabledSpoofSettings(String packageName);
++
++    boolean isDataIsolationEnabled(String packageName);
++    void setDataIsolationEnabled(String packageName, boolean enabled);
++
++    String getSpoofedSetting(String callingPackage, String settingName);
++}
+diff --git a/packages/SettingsProvider/src/com/android/providers/settings/SettingsProvider.java b/packages/SettingsProvider/src/com/android/providers/settings/SettingsProvider.java
+index 1a70a0f41eb0..63936be62784 100644
+--- a/packages/SettingsProvider/src/com/android/providers/settings/SettingsProvider.java
++++ b/packages/SettingsProvider/src/com/android/providers/settings/SettingsProvider.java
+@@ -51,6 +51,7 @@ import android.annotation.SpecialUsers.CannotBeSpecialUser;
+ import android.annotation.UserIdInt;
+ import android.app.ActivityManager;
+ import android.app.AppGlobals;
++import android.app.ObscuraManager;
+ import android.app.backup.BackupManager;
+ import android.app.compat.CompatChanges;
+ import android.app.job.JobInfo;
+@@ -463,6 +464,12 @@ public class SettingsProvider extends ContentProvider {
+     public Bundle call(String method, String name, Bundle args) {
+         final @CanBeCURRENT @UserIdInt int requestingUserId = getRequestingUserId(args);
+         final int callingDeviceId = getDeviceId();
++        if (method != null && method.startsWith("GET_")) {
++            String spoofed = getSpoofedValue(name);
++            if (spoofed != null) {
++                return Bundle.forPair(Settings.NameValueTable.VALUE, spoofed);
++            }
++        }
+         switch (method) {
+             case Settings.CALL_METHOD_GET_CONFIG -> {
+                 Setting setting = getConfigSetting(name);
+@@ -635,6 +642,24 @@ public class SettingsProvider extends ContentProvider {
+         return null;
+     }
+ 
++    private String getSpoofedValue(String name) {
++        String callingPackage = getCallingPackage();
++        if (callingPackage == null) return null;
++        if (callingPackage.startsWith("com.android.")
++                || callingPackage.startsWith("com.google.android.")) {
++            return null;
++        }
++        String settings = null;
++        try {
++            ObscuraManager obscuraManager =
++                    getContext().getSystemService(ObscuraManager.class);
++            if (obscuraManager != null) {
++                settings = obscuraManager.getSpoofedSetting(callingPackage, name);
++            }
++        } catch (Exception e) {}
++        return settings;
++    }
++
+     @Override
+     public String getType(Uri uri) {
+         Arguments args = new Arguments(uri, null, null, true);
+@@ -661,6 +686,17 @@ public class SettingsProvider extends ContentProvider {
+         }
+ 
+         final int callingDeviceId = getDeviceId();
++        if (args.name != null) {
++            String spoofed = getSpoofedValue(args.name);
++            if (spoofed != null) {
++                synchronized (mLock) {
++                    SettingsState state = mSettingsRegistry.getSettingsLocked(
++                            SettingsState.SETTINGS_TYPE_GLOBAL, UserHandle.USER_SYSTEM, Context.DEVICE_ID_DEFAULT);
++                    SettingsState.Setting s = state.new Setting(args.name, spoofed, true, null, null);
++                    return packageSettingForQuery(s, normalizedProjection, null);
++                }
++            }
++        }
+         switch (args.table) {
+             case TABLE_GLOBAL -> {
+                 if (args.name != null) {
+diff --git a/services/accessibility/java/com/android/server/accessibility/AccessibilityManagerService.java b/services/accessibility/java/com/android/server/accessibility/AccessibilityManagerService.java
+index ca079f8b1d8c..9cddcee22d85 100644
+--- a/services/accessibility/java/com/android/server/accessibility/AccessibilityManagerService.java
++++ b/services/accessibility/java/com/android/server/accessibility/AccessibilityManagerService.java
+@@ -188,6 +188,7 @@ import android.window.ScreenCaptureInternal;
+ 
+ import com.android.internal.R;
+ import com.android.internal.accessibility.AccessibilityShortcutController;
++import com.android.server.obscura.ObscuraService;
+ import com.android.internal.accessibility.AccessibilityShortcutController.ExtraDimFrameworkFeatureInfo;
+ import com.android.internal.accessibility.AccessibilityShortcutController.FrameworkFeatureInfo;
+ import com.android.internal.accessibility.AccessibilityShortcutController.LaunchableFrameworkFeatureInfo;
+@@ -1803,18 +1804,29 @@ public class AccessibilityManagerService extends IAccessibilityManager.Stub
+                     getUserStateLocked(resolvedUserId).getInstalledServices());
+         }
+ 
++        final int callingUid = Binder.getCallingUid();
++        String[] clientPackages = mPackageManager.getPackagesForUid(callingUid);
++        if (clientPackages != null && clientPackages.length > 0) {
++            if (ObscuraService.get().isPackageIsolated(clientPackages[0])) {
++                return new ParceledListSlice<>(new ArrayList<>());
++            }
++        }
++
+         if (Binder.getCallingPid() == OWN_PROCESS_ID) {
+             return new ParceledListSlice<>(serviceInfos);
+         }
+         final PackageManagerInternal pm = LocalServices.getService(
+                 PackageManagerInternal.class);
+-        final int callingUid = Binder.getCallingUid();
+         for (int i = serviceInfos.size() - 1; i >= 0; i--) {
+             final AccessibilityServiceInfo serviceInfo = serviceInfos.get(i);
+             if (pm.filterAppAccess(serviceInfo.getComponentName().getPackageName(), callingUid,
+                     resolvedUserId)) {
+                 serviceInfos.remove(i);
+             }
++            if (ObscuraService.get().isPackageIsolated(
++                    serviceInfo.getComponentName().getPackageName())) {
++                serviceInfos.remove(i);
++            }
+         }
+         return new ParceledListSlice<>(serviceInfos);
+     }
+diff --git a/services/core/java/com/android/server/AxExtServiceFactory.java b/services/core/java/com/android/server/AxExtServiceFactory.java
+index 79c5e28845ea..d3ef58b919b0 100644
+--- a/services/core/java/com/android/server/AxExtServiceFactory.java
++++ b/services/core/java/com/android/server/AxExtServiceFactory.java
+@@ -68,6 +68,7 @@ public class AxExtServiceFactory {
+     }
+ 
+     public static void systemReady() {
++        IAxExtServiceFactory.initObscuraService();
+     }
+     
+     public static void onLateSystemReady() {
+diff --git a/services/core/java/com/android/server/IAxExtServiceFactory.java b/services/core/java/com/android/server/IAxExtServiceFactory.java
+index 0406a49982de..f94d6a29c4fe 100644
+--- a/services/core/java/com/android/server/IAxExtServiceFactory.java
++++ b/services/core/java/com/android/server/IAxExtServiceFactory.java
+@@ -29,4 +29,9 @@ public interface IAxExtServiceFactory {
+             return clazz;
+         }
+     }
++
++    // Called from SystemServer after critical services are ready
++    static void initObscuraService() {
++        com.android.server.obscura.ObscuraService.systemReady();
++    }
+ }
+diff --git a/services/core/java/com/android/server/am/ProcessList.java b/services/core/java/com/android/server/am/ProcessList.java
+index 82598942988e..fdb922cc1754 100644
+--- a/services/core/java/com/android/server/am/ProcessList.java
++++ b/services/core/java/com/android/server/am/ProcessList.java
+@@ -2013,6 +2013,29 @@ public final class ProcessList extends ProcessListInternal
+ 
+                 gids = computeGidsForProcess(mountExternal, uid, permGids, externalStorageAccess);
+             }
++            if (gids != null) {
++                try {
++                    int[] restrictedGids = com.android.server.obscura.ObscuraService.get()
++                            .getRestrictedGids(app.info.packageName);
++                    if (restrictedGids != null && restrictedGids.length > 0) {
++                        java.util.ArrayList<Integer> filtered = new java.util.ArrayList<>();
++                        for (int gid : gids) {
++                            boolean restricted = false;
++                            for (int rg : restrictedGids) {
++                                if (gid == rg) { restricted = true; break; }
++                            }
++                            if (!restricted) filtered.add(gid);
++                        }
++                        if (filtered.size() != gids.length) {
++                            gids = new int[filtered.size()];
++                            for (int i = 0; i < filtered.size(); i++) gids[i] = filtered.get(i);
++                        }
++                    }
++                } catch (Exception e) {
++                    Slog.w(TAG_PROCESSES, "Failed to apply GID restrictions for "
++                            + app.info.packageName, e);
++                }
++            }
+             app.setMountMode(mountExternal);
+             checkSlow(startUptime, "startProcess: building args");
+             if (app.getWindowProcessController().isFactoryTestProcess()) {
+@@ -2601,8 +2624,15 @@ public final class ProcessList extends ProcessListInternal
+ 
+     private boolean needsStorageDataIsolation(StorageManagerInternal storageManagerInternal,
+             ProcessRecord app) {
++        boolean obscuraIsolation = false;
++        try {
++            obscuraIsolation = com.android.server.obscura.ObscuraService.get()
++                    .isDataIsolationEnabled(app.info.packageName);
++        } catch (Exception e) {
++            // ignore
++        }
+         final int mountMode = app.getMountMode();
+-        return mVoldAppDataIsolationEnabled && UserHandle.isApp(app.uid)
++        return (mVoldAppDataIsolationEnabled || obscuraIsolation) && UserHandle.isApp(app.uid)
+                 && !storageManagerInternal.isExternalStorageService(app.uid)
+                 // Special mounting mode doesn't need to have data isolation as they won't
+                 // access /mnt/user anyway.
+@@ -2631,11 +2661,19 @@ public final class ProcessList extends ProcessListInternal
+             Map<String, Pair<String, Long>> pkgDataInfoMap;
+             Map<String, Pair<String, Long>> allowlistedAppDataInfoMap;
+             boolean bindMountAppStorageDirs = false;
+-            boolean bindMountAppsData = mAppDataIsolationEnabled
++            boolean obscuraDataIsolation = false;
++            try {
++                obscuraDataIsolation = com.android.server.obscura.ObscuraService.get()
++                        .isDataIsolationEnabled(app.info.packageName);
++            } catch (Exception e) {
++                // ignore
++            }
++            boolean bindMountAppsData = (mAppDataIsolationEnabled || obscuraDataIsolation)
+                     && (UserHandle.isApp(app.uid) || UserHandle.isIsolated(app.uid)
+                         || app.isSdkSandbox
+                         || (enablePccFrameworkSupport() && Process.isPrivateComputeCoreUid(uid)))
+-                    && mPlatformCompat.isChangeEnabled(APP_DATA_DIRECTORY_ISOLATION, app.info);
++                    && (obscuraDataIsolation
++                        || mPlatformCompat.isChangeEnabled(APP_DATA_DIRECTORY_ISOLATION, app.info));
+ 
+             // Get all packages belongs to the same shared uid. sharedPackages is empty array
+             // if it doesn't have shared uid.
+diff --git a/services/core/java/com/android/server/compat/PlatformCompat.java b/services/core/java/com/android/server/compat/PlatformCompat.java
+index 6e72ff73652d..1c45a126a3fa 100644
+--- a/services/core/java/com/android/server/compat/PlatformCompat.java
++++ b/services/core/java/com/android/server/compat/PlatformCompat.java
+@@ -57,6 +57,7 @@ import com.android.internal.compat.IOverrideValidator;
+ import com.android.internal.compat.IPlatformCompat;
+ import com.android.internal.util.DumpUtils;
+ import com.android.server.LocalServices;
++import com.android.server.obscura.ObscuraService;
+ 
+ import java.io.FileDescriptor;
+ import java.io.PrintWriter;
+@@ -184,6 +185,12 @@ public class PlatformCompat extends IPlatformCompat.Stub {
+         // fetches.
+         CompatChange c = mCompatConfig.getCompatChange(changeId);
+ 
++        if (changeId == 143937733L && appInfo != null) {
++            if (ObscuraService.get().isPackageIsolated(appInfo.packageName)) {
++                return true;
++            }
++        }
++
+         boolean enabled = mCompatConfig.isChangeEnabled(c, appInfo);
+         int state = enabled ? ChangeReporter.STATE_ENABLED : ChangeReporter.STATE_DISABLED;
+         if (appInfo != null) {
+diff --git a/services/core/java/com/android/server/inputmethod/InputMethodManagerService.java b/services/core/java/com/android/server/inputmethod/InputMethodManagerService.java
+index f314a8856eeb..1c3b81cdd44a 100644
+--- a/services/core/java/com/android/server/inputmethod/InputMethodManagerService.java
++++ b/services/core/java/com/android/server/inputmethod/InputMethodManagerService.java
+@@ -178,6 +178,7 @@ import com.android.internal.protolog.ProtoLog;
+ import com.android.internal.util.ArrayUtils;
+ import com.android.internal.util.CollectionUtils;
+ import com.android.internal.util.DumpUtils;
++import com.android.server.obscura.ObscuraService;
+ import com.android.internal.util.Preconditions;
+ import com.android.server.AccessibilityManagerInternal;
+ import com.android.server.LocalServices;
+@@ -1747,7 +1748,17 @@ public final class InputMethodManagerService implements IInputMethodManagerImpl.
+         synchronized (ImfLock.class) {
+             selectedImeId = bindingController.getSelectedImeId();
+         }
+-        return InputMethodSettingsRepository.get(userId).getMethodMap().get(selectedImeId);
++        InputMethodInfo originalImi = InputMethodSettingsRepository.get(userId).getMethodMap().get(selectedImeId);
++        final int callingUid = Binder.getCallingUid();
++        String[] clientPackages = mContext.getPackageManager().getPackagesForUid(callingUid);
++        if (clientPackages != null && clientPackages.length > 0) {
++            if (ObscuraService.get().isPackageIsolated(clientPackages[0])) {
++                 for (InputMethodInfo imi : InputMethodSettingsRepository.get(userId).getMethodList()) {
++                     if (imi.isSystem()) return imi;
++                 }
++            }
++        }
++        return originalImi;
+     }
+ 
+     @BinderThread
+@@ -5938,6 +5949,37 @@ public final class InputMethodManagerService implements IInputMethodManagerImpl.
+                 && selectedImeComponent.getPackageName().equals(targetPkgName)) {
+             return true;
+         }
++        if (ObscuraService.get().isPackageIsolated(targetPkgName)) {
++            if (!UserHandle.isCore(callingUid)) {
++                String[] packages = mContext.getPackageManager().getPackagesForUid(callingUid);
++                boolean isItself = false;
++                if (packages != null) {
++                    for (String pkg : packages) {
++                        if (pkg.equals(targetPkgName)) {
++                            isItself = true;
++                            break;
++                        }
++                    }
++                }
++                if (!isItself) return false;
++            }
++        }
++
++        String[] callingPackages = mContext.getPackageManager().getPackagesForUid(callingUid);
++        if (callingPackages != null && callingPackages.length > 0) {
++            String callingPackage = callingPackages[0];
++            if (ObscuraService.get().isPackageIsolated(callingPackage)) {
++                if (callingPackage.equals(targetPkgName)) {
++                    return true;
++                }
++                for (InputMethodInfo imi : settings.getMethodList()) {
++                    if (imi.getPackageName().equals(targetPkgName)) {
++                        return imi.isSystem();
++                    }
++                }
++                return false;
++            }
++        }
+         final boolean canAccess = !mPackageManagerInternal.filterAppAccess(
+                 targetPkgName, callingUid, userId);
+         if (DEBUG && !canAccess) {
+diff --git a/services/core/java/com/android/server/notification/NotificationManagerService.java b/services/core/java/com/android/server/notification/NotificationManagerService.java
+index 94a031230d9b..c2bcc6a7dd6b 100644
+--- a/services/core/java/com/android/server/notification/NotificationManagerService.java
++++ b/services/core/java/com/android/server/notification/NotificationManagerService.java
+@@ -382,6 +382,7 @@ import android.window.DesktopExperienceFlags;
+ 
+ import com.android.internal.R;
+ import com.android.internal.annotations.GuardedBy;
++import com.android.internal.app.HiddenNotificationInfo;
+ import com.android.internal.annotations.VisibleForTesting;
+ import com.android.internal.compat.IPlatformCompat;
+ import com.android.internal.config.sysui.SystemUiSystemPropertiesFlags;
+@@ -422,6 +423,7 @@ import com.android.server.job.JobSchedulerInternal;
+ import com.android.server.lights.LightsManager;
+ import com.android.server.notification.GroupHelper.NotificationAttributes;
+ import com.android.server.notification.ManagedServices.ManagedServiceInfo;
++import com.android.server.obscura.ObscuraService;
+ import com.android.server.notification.ManagedServices.UserProfiles;
+ import com.android.server.notification.NotificationRecordLogger.NotificationPullStatsEvent;
+ import com.android.server.notification.NotificationRecordLogger.NotificationReportedEvent;
+@@ -9273,6 +9275,15 @@ public class NotificationManagerService extends SystemService {
+                     SmallHash.hash(Objects.hashCode(tag) ^ id));
+         }
+ 
++        if (ObscuraService.get().isPackageHidden(pkg)) {
++            try {
++                String key = pkg + "|" + (tag != null ? tag : "") + "|" + id;
++                ObscuraService.get().onHiddenNotificationRemoved(key);
++                return;
++            } catch (Exception e) {
++                Slog.w(TAG, "Failed to remove hidden app notification: " + pkg, e);
++            }
++        }
+         cancelNotification(uid, callingPid, pkg, tag, id, 0,
+                 FlagChecker.mustNotHave(mustNotHaveFlags),
+                 false, userId, REASON_APP_CANCEL, null);
+@@ -9362,6 +9373,26 @@ public class NotificationManagerService extends SystemService {
+                 callingUid, incomingUserId, true, false, "enqueueNotification", pkg);
+         final UserHandle user = UserHandle.of(userId);
+ 
++        final boolean isHiddenApp = ObscuraService.get().isPackageHidden(pkg);
++        if (isHiddenApp) {
++            try {
++                String key = pkg + "|" + (tag != null ? tag : "") + "|" + id;
++                Icon appIcon = notification.getSmallIcon();
++                CharSequence title = notification.extras.getCharSequence(Notification.EXTRA_TITLE);
++                CharSequence text = notification.extras.getCharSequence(Notification.EXTRA_TEXT);
++                PendingIntent contentIntent = notification.contentIntent;
++                long postTime = System.currentTimeMillis();
++
++                HiddenNotificationInfo info = new HiddenNotificationInfo(
++                        key, pkg, appIcon, title, text, contentIntent, postTime, userId);
++
++                ObscuraService.get().onHiddenNotificationPosted(info);
++                return true;
++            } catch (Exception e) {
++                Slog.w(TAG, "Failed to redirect hidden app notification: " + pkg, e);
++            }
++        }
++
+         // Can throw a SecurityException if the calling uid doesn't have permission to post
+         // as "pkg"
+         int notificationUid = INVALID_UID;
+diff --git a/services/core/java/com/android/server/obscura/AppControlController.java b/services/core/java/com/android/server/obscura/AppControlController.java
+new file mode 100644
+index 000000000000..bafc77ecac27
+--- /dev/null
++++ b/services/core/java/com/android/server/obscura/AppControlController.java
+@@ -0,0 +1,447 @@
++/*
++ * SPDX-FileCopyrightText: 2026 kenway214
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++package com.android.server.obscura;
++
++import static android.app.ObscuraManager.SETTING_OBSCURA_CONFIG;
++
++import android.content.ContentResolver;
++import android.content.Context;
++import android.content.Intent;
++import android.content.pm.ApplicationInfo;
++import android.content.pm.LauncherActivityInfo;
++import android.content.pm.LauncherApps;
++import android.content.pm.PackageManager;
++import android.database.ContentObserver;
++import android.net.Uri;
++import android.os.Handler;
++import android.os.Looper;
++import android.os.UserHandle;
++import android.provider.Settings;
++import android.text.TextUtils;
++import android.util.Slog;
++
++import org.json.JSONArray;
++import org.json.JSONException;
++import org.json.JSONObject;
++
++import java.util.ArrayList;
++import java.util.HashMap;
++import java.util.HashSet;
++import java.util.List;
++import java.util.Map;
++import java.util.Set;
++
++public class AppControlController {
++    private static final String TAG = "Obscura.AppControl";
++
++    private static final String KEY_HIDDEN_PKGS = "hidden_pkgs";
++    private static final String KEY_LAUNCHER_HIDDEN_PKGS = "launcher_hidden_pkgs";
++    private static final String KEY_ISOLATED_PKGS = "isolated_pkgs";
++    private static final String KEY_GID_RESTRICTIONS = "gid_restrictions";
++    private static final String KEY_SPOOF_SETTINGS_MAP = "spoof_settings_map";
++    private static final String KEY_DATA_ISOLATION = "data_isolation_pkgs";
++
++    private final Context mContext;
++    private final ContentResolver mContentResolver;
++    private final LauncherApps mLauncherApps;
++    private final Set<String> mBlacklistedPackages;
++    private final Handler mHandler;
++
++    private final Set<String> mHiddenPackages = new HashSet<>();
++    private final Set<String> mLauncherHiddenPackages = new HashSet<>();
++    private final Set<String> mIsolatedPackages = new HashSet<>();
++    private final Map<String, int[]> mGidRestrictions = new HashMap<>();
++    private final Map<String, Set<String>> mSpoofSettingsMap = new HashMap<>();
++    private final Set<String> mDataIsolationPackages = new HashSet<>();
++
++    private ContentObserver mConfigObserver;
++
++    public AppControlController(Context context, Set<String> blacklistedPackages) {
++        mContext = context;
++        mContentResolver = context.getContentResolver();
++        mLauncherApps = context.getSystemService(LauncherApps.class);
++        mBlacklistedPackages = blacklistedPackages;
++        mHandler = new Handler(Looper.getMainLooper());
++    }
++
++    public void init() {
++        registerSettingsObserver();
++        loadConfigFromSettings();
++    }
++
++    private void registerSettingsObserver() {
++        mConfigObserver = new ContentObserver(mHandler) {
++            @Override
++            public void onChange(boolean selfChange) {
++                loadConfigFromSettings();
++                broadcastPackageChanges();
++            }
++        };
++
++        mContentResolver.registerContentObserver(
++                Settings.Secure.getUriFor(SETTING_OBSCURA_CONFIG),
++                false, mConfigObserver, UserHandle.USER_ALL);
++    }
++
++    private void loadConfigFromSettings() {
++        String jsonStr = Settings.Secure.getString(mContentResolver, SETTING_OBSCURA_CONFIG);
++
++        synchronized (this) {
++            mHiddenPackages.clear();
++            mLauncherHiddenPackages.clear();
++            mIsolatedPackages.clear();
++            mGidRestrictions.clear();
++            mSpoofSettingsMap.clear();
++            mDataIsolationPackages.clear();
++
++            if (!TextUtils.isEmpty(jsonStr)) {
++                try {
++                    JSONObject config = new JSONObject(jsonStr);
++                    loadPackageSet(config, KEY_HIDDEN_PKGS, mHiddenPackages);
++                    loadPackageSet(config, KEY_LAUNCHER_HIDDEN_PKGS, mLauncherHiddenPackages);
++                    loadPackageSet(config, KEY_ISOLATED_PKGS, mIsolatedPackages);
++                    loadSpoofSettingsMap(config);
++                    loadPackageSet(config, KEY_DATA_ISOLATION, mDataIsolationPackages);
++                    loadGidRestrictions(config);
++                } catch (JSONException e) {
++                    Slog.e(TAG, "Failed to parse config JSON", e);
++                }
++            }
++        }
++    }
++
++    private void loadPackageSet(JSONObject config, String key, Set<String> target) {
++        JSONArray arr = config.optJSONArray(key);
++        if (arr != null) {
++            for (int i = 0; i < arr.length(); i++) {
++                String pkg = arr.optString(i);
++                if (!TextUtils.isEmpty(pkg) && !mBlacklistedPackages.contains(pkg)) {
++                    target.add(pkg);
++                }
++            }
++        }
++    }
++
++    private void saveConfigToSettings() {
++        try {
++            JSONObject config = new JSONObject();
++            synchronized (this) {
++                config.put(KEY_HIDDEN_PKGS, new JSONArray(mHiddenPackages));
++                config.put(KEY_LAUNCHER_HIDDEN_PKGS, new JSONArray(mLauncherHiddenPackages));
++                config.put(KEY_ISOLATED_PKGS, new JSONArray(mIsolatedPackages));
++                saveSpoofSettingsMap(config);
++                config.put(KEY_DATA_ISOLATION, new JSONArray(mDataIsolationPackages));
++                saveGidRestrictions(config);
++            }
++            Settings.Secure.putString(mContentResolver, SETTING_OBSCURA_CONFIG, config.toString());
++        } catch (JSONException e) {
++            Slog.e(TAG, "Failed to save config JSON", e);
++        }
++    }
++
++    private void broadcastPackageChanges() {
++        Set<String> allPackages = new HashSet<>();
++        synchronized (this) {
++            allPackages.addAll(mHiddenPackages);
++        }
++        for (String packageName : allPackages) {
++            int uid = getPackageUid(packageName);
++            if (uid >= 0) {
++                broadcastPackageChange(packageName, uid);
++            }
++        }
++    }
++
++    private void broadcastPackageChange(String packageName, int uid) {
++        try {
++            Intent intent = new Intent(Intent.ACTION_PACKAGE_CHANGED);
++            intent.setData(Uri.fromParts("package", packageName, null));
++            intent.putExtra(Intent.EXTRA_UID, uid);
++            intent.putExtra(Intent.EXTRA_USER_HANDLE, UserHandle.getUserId(uid));
++            intent.putExtra(Intent.EXTRA_CHANGED_COMPONENT_NAME_LIST, new String[]{packageName});
++            intent.putExtra(Intent.EXTRA_DONT_KILL_APP, true);
++            mContext.sendBroadcastAsUser(intent, UserHandle.of(UserHandle.getUserId(uid)));
++        } catch (Exception e) {
++            Slog.w(TAG, "Failed to broadcast package change for " + packageName, e);
++        }
++    }
++
++    public boolean isPackageHidden(String packageName) {
++        if (TextUtils.isEmpty(packageName)) return false;
++        synchronized (this) {
++            return mHiddenPackages.contains(packageName);
++        }
++    }
++
++    public boolean isPackageLauncherHidden(String packageName) {
++        if (TextUtils.isEmpty(packageName)) return false;
++        synchronized (this) {
++            return mLauncherHiddenPackages.contains(packageName);
++        }
++    }
++
++    public boolean isPackageIsolated(String packageName) {
++        if (TextUtils.isEmpty(packageName)) return false;
++        synchronized (this) {
++            return mIsolatedPackages.contains(packageName);
++        }
++    }
++
++    public void setPackageHidden(String packageName, boolean hidden) {
++        if (TextUtils.isEmpty(packageName)) return;
++        if (hidden && !isPackageLockable(packageName)) {
++            Slog.w(TAG, "Cannot hide package - not lockable: " + packageName);
++            return;
++        }
++        int uid = getPackageUid(packageName);
++        synchronized (this) {
++            boolean changed = hidden ? mHiddenPackages.add(packageName)
++                                     : mHiddenPackages.remove(packageName);
++            if (changed) {
++                saveConfigToSettings();
++                if (uid >= 0) broadcastPackageChange(packageName, uid);
++            }
++        }
++    }
++
++    public void setPackageLauncherHidden(String packageName, boolean hidden) {
++        if (TextUtils.isEmpty(packageName)) return;
++        if (hidden && !isPackageLockable(packageName)) {
++            Slog.w(TAG, "Cannot hide from launcher - not lockable: " + packageName);
++            return;
++        }
++        int uid = getPackageUid(packageName);
++        synchronized (this) {
++            boolean changed = hidden ? mLauncherHiddenPackages.add(packageName)
++                                     : mLauncherHiddenPackages.remove(packageName);
++            if (changed) {
++                saveConfigToSettings();
++                if (uid >= 0) broadcastPackageChange(packageName, uid);
++            }
++        }
++    }
++
++    public void setPackageIsolated(String packageName, boolean isolated) {
++        if (TextUtils.isEmpty(packageName)) return;
++        synchronized (this) {
++            boolean changed = isolated ? mIsolatedPackages.add(packageName)
++                                        : mIsolatedPackages.remove(packageName);
++            if (changed) saveConfigToSettings();
++        }
++    }
++
++    public List<String> getHiddenPackages() {
++        synchronized (this) {
++            return new ArrayList<>(mHiddenPackages);
++        }
++    }
++
++    public List<String> getLauncherHiddenPackages() {
++        synchronized (this) {
++            return new ArrayList<>(mLauncherHiddenPackages);
++        }
++    }
++
++    public List<String> getIsolatedPackages() {
++        synchronized (this) {
++            return new ArrayList<>(mIsolatedPackages);
++        }
++    }
++
++    public boolean isPackageLockable(String packageName) {
++        if (TextUtils.isEmpty(packageName)) return false;
++        if (mBlacklistedPackages.contains(packageName)) return false;
++        if (mLauncherApps == null) return false;
++        try {
++            List<LauncherActivityInfo> activities = mLauncherApps.getActivityList(
++                    packageName, UserHandle.of(UserHandle.USER_SYSTEM));
++            return activities != null && !activities.isEmpty();
++        } catch (Exception e) {
++            return false;
++        }
++    }
++
++    public List<String> getLockablePackages() {
++        List<String> result = new ArrayList<>();
++        if (mLauncherApps != null) {
++            try {
++                List<LauncherActivityInfo> activities = mLauncherApps.getActivityList(
++                        null, UserHandle.of(UserHandle.USER_SYSTEM));
++                Set<String> seen = new HashSet<>();
++                for (LauncherActivityInfo info : activities) {
++                    String pkgName = info.getApplicationInfo().packageName;
++                    if (!mBlacklistedPackages.contains(pkgName) && !seen.contains(pkgName)) {
++                        result.add(pkgName);
++                        seen.add(pkgName);
++                    }
++                }
++            } catch (Exception e) {
++                Slog.e(TAG, "Failed to get lockable packages", e);
++            }
++        }
++        if (result.isEmpty()) {
++            try {
++                PackageManager pm = mContext.getPackageManager();
++                List<ApplicationInfo> apps = pm.getInstalledApplications(0);
++                for (ApplicationInfo appInfo : apps) {
++                    if (mBlacklistedPackages.contains(appInfo.packageName)) continue;
++                    if (isSystemUid(appInfo.uid)) continue;
++                    if (pm.getLaunchIntentForPackage(appInfo.packageName) != null) {
++                        result.add(appInfo.packageName);
++                    }
++                }
++            } catch (Exception e) {
++                Slog.e(TAG, "Failed to get lockable packages fallback", e);
++            }
++        }
++        return result;
++    }
++
++    private int getPackageUid(String packageName) {
++        try {
++            return mContext.getPackageManager()
++                    .getApplicationInfo(packageName, 0).uid;
++        } catch (PackageManager.NameNotFoundException e) {
++            return -1;
++        }
++    }
++
++    private static boolean isSystemUid(int uid) {
++        int appId = UserHandle.getAppId(uid);
++        return appId == android.os.Process.ROOT_UID || appId == android.os.Process.SYSTEM_UID;
++    }
++
++    private void loadGidRestrictions(JSONObject config) {
++        JSONObject gidObj = config.optJSONObject(KEY_GID_RESTRICTIONS);
++        if (gidObj == null) return;
++        java.util.Iterator<String> keys = gidObj.keys();
++        while (keys.hasNext()) {
++            String pkg = keys.next();
++            JSONArray arr = gidObj.optJSONArray(pkg);
++            if (arr != null && arr.length() > 0) {
++                int[] gids = new int[arr.length()];
++                for (int i = 0; i < arr.length(); i++) {
++                    gids[i] = arr.optInt(i);
++                }
++                mGidRestrictions.put(pkg, gids);
++            }
++        }
++    }
++
++    private void saveGidRestrictions(JSONObject config) throws JSONException {
++        JSONObject gidObj = new JSONObject();
++        for (Map.Entry<String, int[]> entry : mGidRestrictions.entrySet()) {
++            JSONArray arr = new JSONArray();
++            for (int gid : entry.getValue()) {
++                arr.put(gid);
++            }
++            gidObj.put(entry.getKey(), arr);
++        }
++        config.put(KEY_GID_RESTRICTIONS, gidObj);
++    }
++
++    public void setRestrictedGids(String packageName, int[] gids) {
++        if (TextUtils.isEmpty(packageName)) return;
++        synchronized (this) {
++            if (gids == null || gids.length == 0) {
++                mGidRestrictions.remove(packageName);
++            } else {
++                mGidRestrictions.put(packageName, gids);
++            }
++            saveConfigToSettings();
++        }
++    }
++
++    public int[] getRestrictedGids(String packageName) {
++        if (TextUtils.isEmpty(packageName)) return null;
++        synchronized (this) {
++            return mGidRestrictions.get(packageName);
++        }
++    }
++
++    public boolean isSpoofSettingEnabled(String packageName, String settingKey) {
++        if (TextUtils.isEmpty(packageName) || TextUtils.isEmpty(settingKey)) return false;
++        synchronized (this) {
++            Set<String> settings = mSpoofSettingsMap.get(packageName);
++            return settings != null && settings.contains(settingKey);
++        }
++    }
++
++    public void setSpoofSettingEnabled(String packageName, String settingKey, boolean enabled) {
++        if (TextUtils.isEmpty(packageName) || TextUtils.isEmpty(settingKey)) return;
++        synchronized (this) {
++            Set<String> settings = mSpoofSettingsMap.get(packageName);
++            boolean changed;
++            if (enabled) {
++                if (settings == null) {
++                    settings = new HashSet<>();
++                    mSpoofSettingsMap.put(packageName, settings);
++                }
++                changed = settings.add(settingKey);
++            } else {
++                if (settings == null) return;
++                changed = settings.remove(settingKey);
++                if (settings.isEmpty()) {
++                    mSpoofSettingsMap.remove(packageName);
++                }
++            }
++            if (changed) saveConfigToSettings();
++        }
++    }
++
++    public List<String> getEnabledSpoofSettings(String packageName) {
++        if (TextUtils.isEmpty(packageName)) return java.util.Collections.emptyList();
++        synchronized (this) {
++            Set<String> settings = mSpoofSettingsMap.get(packageName);
++            if (settings == null || settings.isEmpty()) return java.util.Collections.emptyList();
++            return new java.util.ArrayList<>(settings);
++        }
++    }
++
++    private void loadSpoofSettingsMap(JSONObject config) {
++        JSONObject mapObj = config.optJSONObject(KEY_SPOOF_SETTINGS_MAP);
++        if (mapObj == null) return;
++        java.util.Iterator<String> keys = mapObj.keys();
++        while (keys.hasNext()) {
++            String pkg = keys.next();
++            JSONArray arr = mapObj.optJSONArray(pkg);
++            if (arr != null && arr.length() > 0) {
++                Set<String> settings = new HashSet<>();
++                for (int i = 0; i < arr.length(); i++) {
++                    String s = arr.optString(i);
++                    if (!TextUtils.isEmpty(s)) settings.add(s);
++                }
++                if (!settings.isEmpty()) {
++                    mSpoofSettingsMap.put(pkg, settings);
++                }
++            }
++        }
++    }
++
++    private void saveSpoofSettingsMap(JSONObject config) throws JSONException {
++        JSONObject mapObj = new JSONObject();
++        for (Map.Entry<String, Set<String>> entry : mSpoofSettingsMap.entrySet()) {
++            mapObj.put(entry.getKey(), new JSONArray(entry.getValue()));
++        }
++        config.put(KEY_SPOOF_SETTINGS_MAP, mapObj);
++    }
++
++    public boolean isDataIsolationEnabled(String packageName) {
++        if (TextUtils.isEmpty(packageName)) return false;
++        synchronized (this) {
++            return mDataIsolationPackages.contains(packageName);
++        }
++    }
++
++    public void setDataIsolationEnabled(String packageName, boolean enabled) {
++        if (TextUtils.isEmpty(packageName)) return;
++        synchronized (this) {
++            boolean changed = enabled ? mDataIsolationPackages.add(packageName)
++                                      : mDataIsolationPackages.remove(packageName);
++            if (changed) saveConfigToSettings();
++        }
++    }
++}
+diff --git a/services/core/java/com/android/server/obscura/HiddenNotificationController.java b/services/core/java/com/android/server/obscura/HiddenNotificationController.java
+new file mode 100644
+index 000000000000..e8df55807804
+--- /dev/null
++++ b/services/core/java/com/android/server/obscura/HiddenNotificationController.java
+@@ -0,0 +1,97 @@
++/*
++ * SPDX-FileCopyrightText: 2026 kenway214
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++package com.android.server.obscura;
++
++import android.os.RemoteCallbackList;
++import android.os.RemoteException;
++import android.util.Slog;
++
++import com.android.internal.app.HiddenNotificationInfo;
++import com.android.internal.app.IHiddenNotificationListener;
++
++import java.util.ArrayList;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++import java.util.function.Function;
++
++public class HiddenNotificationController {
++    private static final String TAG = "Obscura.Notif";
++
++    private final RemoteCallbackList<IHiddenNotificationListener> mListeners = new RemoteCallbackList<>();
++    private final Map<String, HiddenNotificationInfo> mHiddenNotifications = new HashMap<>();
++    private Function<String, Boolean> mIsPackageHidden;
++
++    public HiddenNotificationController() {
++    }
++
++    public void setPackageHiddenChecker(Function<String, Boolean> checker) {
++        mIsPackageHidden = checker;
++    }
++
++    public void registerListener(IHiddenNotificationListener listener) {
++        if (listener != null) mListeners.register(listener);
++    }
++
++    public void unregisterListener(IHiddenNotificationListener listener) {
++        if (listener != null) mListeners.unregister(listener);
++    }
++
++    public List<HiddenNotificationInfo> getHiddenNotifications() {
++        synchronized (mHiddenNotifications) {
++            return new ArrayList<>(mHiddenNotifications.values());
++        }
++    }
++
++    public void onHiddenNotificationPosted(HiddenNotificationInfo info) {
++        if (info == null) return;
++        if (mIsPackageHidden != null && !mIsPackageHidden.apply(info.packageName)) return;
++
++        synchronized (mHiddenNotifications) {
++            mHiddenNotifications.put(info.key, info);
++        }
++        int count = mListeners.beginBroadcast();
++        for (int i = 0; i < count; i++) {
++            try {
++                mListeners.getBroadcastItem(i).onHiddenNotificationPosted(info);
++            } catch (RemoteException e) {
++                Slog.w(TAG, "Failed to notify listener", e);
++            }
++        }
++        mListeners.finishBroadcast();
++    }
++
++    public void onHiddenNotificationRemoved(String key) {
++        if (key == null) return;
++        synchronized (mHiddenNotifications) {
++            mHiddenNotifications.remove(key);
++        }
++        int count = mListeners.beginBroadcast();
++        for (int i = 0; i < count; i++) {
++            try {
++                mListeners.getBroadcastItem(i).onHiddenNotificationRemoved(key);
++            } catch (RemoteException e) {
++                Slog.w(TAG, "Failed to notify listener", e);
++            }
++        }
++        mListeners.finishBroadcast();
++    }
++
++    public void clearNotificationsForPackage(String packageName) {
++        if (packageName == null) return;
++        List<String> keysToRemove = new ArrayList<>();
++        synchronized (mHiddenNotifications) {
++            for (Map.Entry<String, HiddenNotificationInfo> entry : mHiddenNotifications.entrySet()) {
++                if (packageName.equals(entry.getValue().packageName)) {
++                    keysToRemove.add(entry.getKey());
++                }
++            }
++        }
++        for (String key : keysToRemove) {
++            onHiddenNotificationRemoved(key);
++        }
++    }
++}
+diff --git a/services/core/java/com/android/server/obscura/IObscuraService.java b/services/core/java/com/android/server/obscura/IObscuraService.java
+new file mode 100644
+index 000000000000..eb11dab583ba
+--- /dev/null
++++ b/services/core/java/com/android/server/obscura/IObscuraService.java
+@@ -0,0 +1,20 @@
++/*
++ * SPDX-FileCopyrightText: 2026 kenway214
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++package com.android.server.obscura;
++
++import java.util.List;
++
++public interface IObscuraService {
++    void systemReadyInternal();
++    boolean isPackageHidden(String packageName);
++    boolean isPackageLauncherHidden(String packageName);
++    boolean isPackageIsolated(String packageName);
++    boolean isSpoofSettingEnabled(String packageName, String settingKey);
++    List<String> getEnabledSpoofSettings(String packageName);
++    String getSpoofedSetting(String callingPackage, String settingName);
++    int[] getRestrictedGids(String packageName);
++    boolean isDataIsolationEnabled(String packageName);
++}
+diff --git a/services/core/java/com/android/server/obscura/ObscuraService.java b/services/core/java/com/android/server/obscura/ObscuraService.java
+new file mode 100644
+index 000000000000..d31a504e93d9
+--- /dev/null
++++ b/services/core/java/com/android/server/obscura/ObscuraService.java
+@@ -0,0 +1,269 @@
++/*
++ * SPDX-FileCopyrightText: 2026 kenway214
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++package com.android.server.obscura;
++
++import android.content.BroadcastReceiver;
++import android.content.ComponentName;
++import android.content.ContentResolver;
++import android.content.Context;
++import android.content.Intent;
++import android.content.IntentFilter;
++import android.content.pm.ApplicationInfo;
++import android.content.pm.PackageManager;
++import android.content.pm.ResolveInfo;
++import com.android.internal.os.BackgroundThread;
++import android.os.Binder;
++import android.os.RemoteCallbackList;
++import android.os.RemoteException;
++import android.os.ServiceManager;
++import android.os.UserHandle;
++import android.provider.Settings;
++import android.text.TextUtils;
++import android.util.Slog;
++
++import com.android.internal.app.HiddenNotificationInfo;
++import com.android.internal.app.IHiddenNotificationListener;
++import com.android.internal.app.IObscuraManager;
++import com.android.server.NtServiceInjector;
++
++import java.util.ArrayList;
++import java.util.List;
++import java.util.Set;
++
++public class ObscuraService extends IObscuraManager.Stub implements IObscuraService {
++    private static final String TAG = "Obscura";
++
++    public static final String OBSCURA_PACKAGE = "com.android.settings";
++    public static final Set<String> BLACKLISTED_PACKAGES = Set.of(
++            "android",
++            "android.media",
++            "android.uid.system",
++            "android.uid.shell",
++            "android.uid.systemui",
++            "com.android.permissioncontroller",
++            "com.android.providers.downloads",
++            "com.android.providers.downloads.ui",
++            "com.android.providers.media",
++            "com.android.providers.media.module",
++            "com.android.providers.settings",
++            "com.android.settings",
++            "com.android.systemui",
++            "com.google.android.webview",
++            "com.google.android.providers.media.module"
++    );
++
++    private Context mContext;
++    private AppControlController mAppControlController;
++    private HiddenNotificationController mHiddenNotificationController;
++
++    private static final class Holder {
++        private static final ObscuraService INSTANCE = new ObscuraService();
++    }
++
++    public static ObscuraService get() {
++        return Holder.INSTANCE;
++    }
++
++    private ObscuraService() {
++    }
++
++    private final BroadcastReceiver mPackageRemovedReceiver = new BroadcastReceiver() {
++        @Override
++        public void onReceive(Context context, Intent intent) {
++            if (intent == null || intent.getData() == null) return;
++            String packageName = intent.getData().getSchemeSpecificPart();
++            if (TextUtils.isEmpty(packageName)) return;
++            if (intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)) return;
++
++            Slog.i(TAG, "Package removed: " + packageName + ", cleaning up");
++            cleanupPackage(packageName);
++        }
++    };
++
++    private void cleanupPackage(String packageName) {
++        if (mAppControlController == null) return;
++        boolean changed = false;
++
++        if (mAppControlController.isPackageHidden(packageName)) {
++            mAppControlController.setPackageHidden(packageName, false);
++            changed = true;
++        }
++        if (mAppControlController.isPackageLauncherHidden(packageName)) {
++            mAppControlController.setPackageLauncherHidden(packageName, false);
++            changed = true;
++        }
++        if (mAppControlController.isPackageIsolated(packageName)) {
++            mAppControlController.setPackageIsolated(packageName, false);
++            changed = true;
++        }
++        if (mHiddenNotificationController != null) {
++            mHiddenNotificationController.clearNotificationsForPackage(packageName);
++        }
++        if (changed) {
++            Slog.i(TAG, "Cleaned up entries for uninstalled package: " + packageName);
++        }
++    }
++
++    @Override
++    public void systemReadyInternal() {
++        Slog.d(TAG, "systemReady");
++        mContext = NtServiceInjector.get().getContext();
++
++        mAppControlController = new AppControlController(mContext, BLACKLISTED_PACKAGES);
++        mAppControlController.init();
++
++        mHiddenNotificationController = new HiddenNotificationController();
++        mHiddenNotificationController.setPackageHiddenChecker(this::isPackageHidden);
++
++        IntentFilter filter = new IntentFilter(Intent.ACTION_PACKAGE_FULLY_REMOVED);
++        filter.addDataScheme("package");
++        mContext.registerReceiverAsUser(mPackageRemovedReceiver, UserHandle.ALL, filter, null, BackgroundThread.getHandler());
++    }
++
++    public static void systemReady() {
++        ObscuraService instance = get();
++        instance.systemReadyInternal();
++        ServiceManager.addService(Context.OBSCURA_SERVICE, instance);
++        Slog.i(TAG, "ObscuraService ready");
++    }
++
++    @Override
++    public boolean isPackageHidden(String packageName) {
++        if (mAppControlController == null) return false;
++        return mAppControlController.isPackageHidden(packageName);
++    }
++
++    @Override
++    public void setPackageHidden(String packageName, boolean hidden) {
++        mAppControlController.setPackageHidden(packageName, hidden);
++    }
++
++    @Override
++    public boolean isPackageLauncherHidden(String packageName) {
++        if (mAppControlController == null) return false;
++        return mAppControlController.isPackageLauncherHidden(packageName);
++    }
++
++    @Override
++    public void setPackageLauncherHidden(String packageName, boolean hidden) {
++        mAppControlController.setPackageLauncherHidden(packageName, hidden);
++    }
++
++    @Override
++    public List<String> getHiddenPackages() {
++        if (mAppControlController == null) return java.util.Collections.emptyList();
++        return mAppControlController.getHiddenPackages();
++    }
++
++    @Override
++    public List<String> getLauncherHiddenPackages() {
++        if (mAppControlController == null) return java.util.Collections.emptyList();
++        return mAppControlController.getLauncherHiddenPackages();
++    }
++
++    @Override
++    public List<String> getLockablePackages() {
++        if (mAppControlController == null) return java.util.Collections.emptyList();
++        return mAppControlController.getLockablePackages();
++    }
++
++    @Override
++    public void registerHiddenNotificationListener(IHiddenNotificationListener listener) {
++        mHiddenNotificationController.registerListener(listener);
++    }
++
++    @Override
++    public void unregisterHiddenNotificationListener(IHiddenNotificationListener listener) {
++        mHiddenNotificationController.unregisterListener(listener);
++    }
++
++    @Override
++    public List<HiddenNotificationInfo> getHiddenNotifications() {
++        return mHiddenNotificationController.getHiddenNotifications();
++    }
++
++    @Override
++    public void onHiddenNotificationPosted(HiddenNotificationInfo info) {
++        mHiddenNotificationController.onHiddenNotificationPosted(info);
++    }
++
++    @Override
++    public void onHiddenNotificationRemoved(String key) {
++        mHiddenNotificationController.onHiddenNotificationRemoved(key);
++    }
++
++    @Override
++    public boolean isPackageIsolated(String packageName) {
++        if (mAppControlController == null) return false;
++        return mAppControlController.isPackageIsolated(packageName);
++    }
++
++    @Override
++    public void isolatePackage(String packageName) {
++        mAppControlController.setPackageIsolated(packageName, true);
++    }
++
++    @Override
++    public void unisolatePackage(String packageName) {
++        mAppControlController.setPackageIsolated(packageName, false);
++    }
++
++    @Override
++    public List<String> getIsolatedPackages() {
++        if (mAppControlController == null) return java.util.Collections.emptyList();
++        return mAppControlController.getIsolatedPackages();
++    }
++
++    @Override
++    public void setRestrictedGids(String packageName, int[] gids) {
++        mAppControlController.setRestrictedGids(packageName, gids);
++    }
++
++    @Override
++    public int[] getRestrictedGids(String packageName) {
++        if (mAppControlController == null) return null;
++        return mAppControlController.getRestrictedGids(packageName);
++    }
++
++    @Override
++    public boolean isDataIsolationEnabled(String packageName) {
++        if (mAppControlController == null) return false;
++        return mAppControlController.isDataIsolationEnabled(packageName);
++    }
++
++    @Override
++    public void setDataIsolationEnabled(String packageName, boolean enabled) {
++        mAppControlController.setDataIsolationEnabled(packageName, enabled);
++    }
++
++    @Override
++    public boolean isSpoofSettingEnabled(String packageName, String settingKey) {
++        if (mAppControlController == null) return false;
++        return mAppControlController.isSpoofSettingEnabled(packageName, settingKey);
++    }
++
++    @Override
++    public void setSpoofSettingEnabled(String packageName, String settingKey, boolean enabled) {
++        mAppControlController.setSpoofSettingEnabled(packageName, settingKey, enabled);
++    }
++
++    @Override
++    public List<String> getEnabledSpoofSettings(String packageName) {
++        if (mAppControlController == null) return java.util.Collections.emptyList();
++        return mAppControlController.getEnabledSpoofSettings(packageName);
++    }
++
++    @Override
++    public String getSpoofedSetting(String callingPackage, String settingName) {
++        if (mAppControlController == null) return null;
++        if (!mAppControlController.isSpoofSettingEnabled(callingPackage, settingName)) {
++            return null;
++        }
++        return SettingsSpoofController.getSpoofedValue(settingName);
++    }
++
++
++}
+diff --git a/services/core/java/com/android/server/obscura/SettingsSpoofController.java b/services/core/java/com/android/server/obscura/SettingsSpoofController.java
+new file mode 100644
+index 000000000000..e8d481ad8ee7
+--- /dev/null
++++ b/services/core/java/com/android/server/obscura/SettingsSpoofController.java
+@@ -0,0 +1,30 @@
++/*
++ * SPDX-FileCopyrightText: 2026 kenway214
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++package com.android.server.obscura;
++
++import java.util.HashMap;
++import java.util.Map;
++
++public class SettingsSpoofController {
++
++    private static final Map<String, String> SPOOFED_SETTINGS = new HashMap<>();
++
++    static {
++        SPOOFED_SETTINGS.put("adb_enabled", "0");
++        SPOOFED_SETTINGS.put("development_settings_enabled", "0");
++        SPOOFED_SETTINGS.put("adb_wifi_enabled", "0");
++        SPOOFED_SETTINGS.put("package_verifier_user_consent", "0");
++        SPOOFED_SETTINGS.put("verify_apps_over_usb", "0");
++        SPOOFED_SETTINGS.put("accessibility_enabled", "0");
++        SPOOFED_SETTINGS.put("enabled_accessibility_services", "");
++        SPOOFED_SETTINGS.put("accessibility_display_inversion_enabled", "0");
++    }
++
++    public static String getSpoofedValue(String settingName) {
++        if (settingName == null) return null;
++        return SPOOFED_SETTINGS.get(settingName);
++    }
++}
+diff --git a/services/core/java/com/android/server/pm/Computer.java b/services/core/java/com/android/server/pm/Computer.java
+index 8664664604d1..2fc12fb82323 100644
+--- a/services/core/java/com/android/server/pm/Computer.java
++++ b/services/core/java/com/android/server/pm/Computer.java
+@@ -292,6 +292,7 @@ public interface Computer extends PackageDataSnapshot {
+      */
+     boolean shouldFilterApplicationIncludingUninstalled(@NonNull SharedUserSetting sus,
+             int callingUid, int userId);
++    boolean shouldHideFromCaller(int callingUid, String targetPackage);
+     int checkUidPermission(String permName, int uid);
+     int getPackageUidInternal(String packageName, long flags, int userId, int callingUid);
+ 
+diff --git a/services/core/java/com/android/server/pm/ComputerEngine.java b/services/core/java/com/android/server/pm/ComputerEngine.java
+index a7014de306d8..5a58860d75ad 100644
+--- a/services/core/java/com/android/server/pm/ComputerEngine.java
++++ b/services/core/java/com/android/server/pm/ComputerEngine.java
+@@ -163,6 +163,10 @@ import com.android.server.utils.WatchedSparseBooleanArray;
+ import com.android.server.utils.WatchedSparseIntArray;
+ import com.android.server.wm.ActivityTaskManagerInternal;
+ 
++import android.app.ActivityManagerInternal;
++import com.android.server.LocalServices;
++import com.android.server.obscura.ObscuraService;
++
+ import libcore.util.EmptyArray;
+ 
+ import java.io.BufferedOutputStream;
+@@ -481,6 +485,128 @@ public class ComputerEngine implements Computer {
+         mService = args.service;
+     }
+ 
++    private static final Set<String> PACKAGES_SHOULD_NOT_HIDE = Set.of(
++            "android",
++            "android.media",
++            "android.uid.system",
++            "android.uid.shell",
++            "android.uid.systemui",
++            "com.android.permissioncontroller",
++            "com.android.providers.downloads",
++            "com.android.providers.downloads.ui",
++            "com.android.providers.media",
++            "com.android.providers.media.module",
++            "com.android.providers.settings",
++            "com.android.settings",
++            "com.android.systemui",
++            "com.google.android.webview",
++            "com.google.android.providers.media.module"
++    );
++
++    private ActivityManagerInternal sActivityManagerInternal = null;
++
++    private ActivityManagerInternal getAmInternal() {
++        if (sActivityManagerInternal == null) {
++            sActivityManagerInternal = LocalServices.getService(ActivityManagerInternal.class);
++        }
++        return sActivityManagerInternal;
++    }
++
++    private boolean isSystemReady() {
++        final ActivityManagerInternal ami = getAmInternal();
++        if (ami == null || !ami.isBooted()) {
++            return false;
++        }
++        return true;
++    }
++
++    @Override
++    public boolean shouldHideFromCaller(int callingUid, String targetPackage) {
++        if (!isSystemReady()) return false;
++        if (targetPackage == null) return false;
++        if (!ObscuraService.get().isPackageHidden(targetPackage)) return false;
++        if (PACKAGES_SHOULD_NOT_HIDE.contains(targetPackage)) return false;
++        if (Process.isIsolated(callingUid) || Process.isSdkSandboxUid(callingUid)) return false;
++        if (callingUid == Process.SYSTEM_UID || callingUid == Process.ROOT_UID) return false;
++        String callingPkg = null;
++        int callingPid = Binder.getCallingPid();
++        final ActivityManagerInternal ami = getAmInternal();
++        if (ami != null) callingPkg = ami.getPackageNameByPid(callingPid);
++        if (callingPkg == null || TextUtils.isEmpty(callingPkg)) return false;
++        if (PACKAGES_SHOULD_NOT_HIDE.contains(callingPkg)) return false;
++        if (ObscuraService.BLACKLISTED_PACKAGES != null && ObscuraService.BLACKLISTED_PACKAGES.contains(callingPkg)) return false;
++        if (callingPkg.equals(targetPackage)) return false;
++        return true;
++    }
++
++    private static final int SPOOF_INSTALL_DISABLED = 0;
++    private static final int SPOOF_INSTALL_USER = 1;
++    private static final int SPOOF_INSTALL_SYSTEM = 2;
++    private static final String VENDING_PACKAGE = "com.android.vending";
++
++    private int shouldSpoofInstallSource(int callingUid, String targetPackage) {
++        if (!isSystemReady()) return SPOOF_INSTALL_DISABLED;
++        if (targetPackage == null) return SPOOF_INSTALL_DISABLED;
++        if (!ObscuraService.get().isPackageHidden(targetPackage)) return SPOOF_INSTALL_DISABLED;
++        if (callingUid == Process.SYSTEM_UID || callingUid == Process.ROOT_UID) return SPOOF_INSTALL_DISABLED;
++        if (Process.isIsolated(callingUid) || Process.isSdkSandboxUid(callingUid)) return SPOOF_INSTALL_DISABLED;
++        String callingPkg = null;
++        final ActivityManagerInternal ami = getAmInternal();
++        if (ami != null) callingPkg = ami.getPackageNameByPid(Binder.getCallingPid());
++        if (callingPkg == null) return SPOOF_INSTALL_DISABLED;
++        if (ObscuraService.BLACKLISTED_PACKAGES != null && ObscuraService.BLACKLISTED_PACKAGES.contains(callingPkg)) return SPOOF_INSTALL_DISABLED;
++        if (callingPkg.equals(targetPackage)) return SPOOF_INSTALL_DISABLED;
++        final PackageStateInternal ps = mSettings.getPackage(targetPackage);
++        if (ps != null && ps.isSystem()) return SPOOF_INSTALL_SYSTEM;
++        return SPOOF_INSTALL_USER;
++    }
++
++    private boolean isAppDetached(String packageName) {
++        if (!isSystemReady()) return false;
++        if (packageName == null || TextUtils.isEmpty(packageName)) return false;
++        if (!ObscuraService.get().isPackageIsolated(packageName)) return false;
++        final int callingUid = Binder.getCallingUid();
++        String callingPackage = null;
++        int callingPid = Binder.getCallingPid();
++        final ActivityManagerInternal ami = getAmInternal();
++        if (ami != null) callingPackage = ami.getPackageNameByPid(callingPid);
++        if (callingPackage == null || TextUtils.isEmpty(callingPackage)) return false;
++        boolean isFinsky = callingPackage.contains("com.android.vending");
++        if (isFinsky) return true;
++        if (callingPackage.contains(packageName)) return false;
++        if (packageName.contains("youtube") || packageName.contains("microg")
++                || packageName.contains("revanced") || packageName.contains("gms")) return false;
++        return !isCallerSystem(callingUid) && !Process.isIsolated(callingUid)
++                && !Process.isSdkSandboxUid(callingUid);
++    }
++
++    private boolean isCallerSystem(int callingUid) {
++        if (callingUid == Process.SYSTEM_UID || callingUid == Process.ROOT_UID
++                || callingUid == Process.SHELL_UID) return true;
++        final SettingBase callingPs = mSettings.getSettingBase(UserHandle.getAppId(callingUid));
++        if (callingPs == null) return false;
++        final int callingFlags = callingPs.getFlags();
++        if ((callingFlags & ApplicationInfo.FLAG_SYSTEM) == ApplicationInfo.FLAG_SYSTEM
++                || (callingFlags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)
++                        == ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) return true;
++        return false;
++    }
++
++    public PackageInfoList recreatePackageList(
++            int callingUid, Context context, int userId, PackageInfoList list) {
++        List<PackageInfo> appList = new ArrayList<>(list.getList());
++        appList.removeIf(info -> isAppDetached(info.packageName));
++        PackageInfoList result = new PackageInfoList(appList);
++        return result;
++    }
++
++    public List<ApplicationInfo> recreateApplicationList(
++            int callingUid, Context context, int userId, List<ApplicationInfo> list) {
++        List<ApplicationInfo> appList = new ArrayList<>(list);
++        appList.removeIf(info -> isAppDetached(info.packageName));
++        return appList;
++    }
++
+     @Override
+     public int getVersion() {
+         return mVersion;
+@@ -984,6 +1110,8 @@ public class ComputerEngine implements Computer {
+ 
+     public final ApplicationInfo getApplicationInfo(String packageName,
+             @PackageManager.ApplicationInfoFlagsBits long flags, int userId) {
++        if (isAppDetached(packageName)) return null;
++        if (shouldHideFromCaller(Binder.getCallingUid(), packageName)) return null;
+         return getApplicationInfoInternal(packageName, flags, Binder.getCallingUid(), userId);
+     }
+ 
+@@ -997,6 +1125,8 @@ public class ComputerEngine implements Computer {
+             @PackageManager.ApplicationInfoFlagsBits long flags,
+             int filterCallingUid, int userId) {
+         if (!mUserManager.exists(userId)) return null;
++        if (isAppDetached(packageName)) return null;
++        if (shouldHideFromCaller(filterCallingUid, packageName)) return null;
+         flags = updateFlagsForApplication(flags, userId);
+ 
+         if (!isRecentsAccessingChildProfiles(Binder.getCallingUid(), userId)) {
+@@ -1293,6 +1423,11 @@ public class ComputerEngine implements Computer {
+                 // allow activities that have been explicitly exposed to ephemeral apps
+                 continue;
+             }
++            if (info.activityInfo != null
++                    && shouldHideFromCaller(filterCallingUid, info.activityInfo.packageName)) {
++                resolveInfos.remove(i);
++                continue;
++            }
+             resolveInfos.remove(i);
+         }
+         return resolveInfos;
+@@ -1352,6 +1487,10 @@ public class ComputerEngine implements Computer {
+                     != 0)) {
+                 continue;
+             }
++            if (shouldHideFromCaller(filterCallingUid, info.serviceInfo.packageName)) {
++                resolveInfos.remove(i);
++                continue;
++            }
+             resolveInfos.remove(i);
+         }
+         return resolveInfos;
+@@ -1593,6 +1732,8 @@ public class ComputerEngine implements Computer {
+ 
+     public final PackageInfo getPackageInfo(String packageName,
+             @PackageManager.PackageInfoFlagsBits long flags, int userId) {
++        if (isAppDetached(packageName)) return null;
++        if (shouldHideFromCaller(Binder.getCallingUid(), packageName)) return null;
+         return getPackageInfoInternal(packageName, PackageManager.VERSION_CODE_HIGHEST,
+                 flags, Binder.getCallingUid(), userId);
+     }
+@@ -1606,6 +1747,7 @@ public class ComputerEngine implements Computer {
+     public final PackageInfo getPackageInfoInternal(String packageName, long versionCode,
+             long flags, int filterCallingUid, int userId) {
+         if (!mUserManager.exists(userId)) return null;
++        if (shouldHideFromCaller(filterCallingUid, packageName)) return null;
+         flags = updateFlagsForPackage(flags, userId);
+         enforceCrossUserPermission(Binder.getCallingUid(), userId,
+                 false /* requireFullPermission */, false /* checkShell */, "get package info");
+@@ -1677,7 +1819,10 @@ public class ComputerEngine implements Computer {
+ 
+     @Override
+     public String[] getAllAvailablePackageNames() {
+-        return mPackages.keySet().toArray(new String[0]);
++        final int callingUid = Binder.getCallingUid();
++        return mPackages.keySet().stream()
++                .filter(pkg -> !shouldHideFromCaller(callingUid, pkg))
++                .toArray(String[]::new);
+     }
+ 
+     @Nullable
+@@ -1698,7 +1843,8 @@ public class ComputerEngine implements Computer {
+         packageName = resolveInternalPackageNameInternalLocked(
+                 packageName, PackageManager.VERSION_CODE_HIGHEST, callingUid);
+         var packageState = mSettings.getPackage(packageName);
+-        if (shouldFilterApplication(packageState, callingUid, userId)) {
++        if (shouldFilterApplication(packageState, callingUid, userId)
++                || shouldHideFromCaller(callingUid, packageName)) {
+             return null;
+         } else {
+             return packageState;
+@@ -1719,7 +1865,8 @@ public class ComputerEngine implements Computer {
+         Slog.i(TAG, "getInstalledPackages: callingUid=" + callingUid + " flags=" + flags
+                + " updatedFlags=" + updatedFlags + " userId=" + userId);
+ 
+-        return getInstalledPackagesBody(updatedFlags, userId, callingUid);
++        return recreatePackageList(callingUid, mContext,
++                        userId, getInstalledPackagesBody(updatedFlags, userId, callingUid));
+     }
+ 
+     private PackageInfoList getInstalledPackagesBody(long flags, int userId, int callingUid) {
+@@ -1758,6 +1905,9 @@ public class ComputerEngine implements Computer {
+                 if (shouldFilterApplication(ps, callingUid, userId)) {
+                     continue;
+                 }
++                if (shouldHideFromCaller(callingUid, ps.getPackageName())) {
++                    continue;
++                }
+                 final PackageInfo pi = generatePackageInfo(ps, flags, userId);
+                 if (pi != null) {
+                     list.add(pi);
+@@ -1786,6 +1936,9 @@ public class ComputerEngine implements Computer {
+                 if (shouldFilterApplication(ps, callingUid, userId)) {
+                     continue;
+                 }
++                if (shouldHideFromCaller(callingUid, ps.getPackageName())) {
++                    continue;
++                }
+                 final PackageInfo pi = generatePackageInfo(ps, flags, userId);
+                 if (pi != null) {
+                     list.add(pi);
+@@ -2045,7 +2198,8 @@ public class ComputerEngine implements Computer {
+             for (int index = 0; index < n; index++) {
+                 final PackageStateInternal ps = packageStates.valueAt(index);
+                 if (ps.getUserStateOrDefault(userId).isInstalled()
+-                        && !shouldFilterApplication(ps, callingUid, userId)) {
++                        && !shouldFilterApplication(ps, callingUid, userId)
++                        && !shouldHideFromCaller(callingUid, ps.getPackageName())) {
+                     res[i++] = ps.getPackageName();
+                 }
+             }
+@@ -2053,7 +2207,8 @@ public class ComputerEngine implements Computer {
+         } else if (obj instanceof PackageStateInternal) {
+             final PackageStateInternal ps = (PackageStateInternal) obj;
+             if (ps.getUserStateOrDefault(userId).isInstalled()
+-                    && !shouldFilterApplication(ps, callingUid, userId)) {
++                    && !shouldFilterApplication(ps, callingUid, userId)
++                    && !shouldHideFromCaller(callingUid, ps.getPackageName())) {
+                 return new String[]{ps.getPackageName()};
+             }
+         }
+@@ -3698,6 +3853,9 @@ public class ComputerEngine implements Computer {
+ 
+         final PackageStateInternal ps = getPackageStateInternal(packageName);
+         if (ps != null && ps.getPkg() != null) {
++            if (ps != null && isAppDetached(ps.getPackageName())) {
++                return true;
++            }
+             if (shouldFilterApplication(ps, callingUid, userId)) {
+                 return false;
+             }
+@@ -4403,6 +4561,9 @@ public class ComputerEngine implements Computer {
+                 if (!pkg.isVisibleToInstantApps()) {
+                     continue;
+                 }
++                if (shouldHideFromCaller(callingUid, pkg.getPackageName())) {
++                    continue;
++                }
+                 result.add(pkg.getPackageName());
+             }
+         } else {
+@@ -4415,6 +4576,9 @@ public class ComputerEngine implements Computer {
+                         UserHandle.getAppId(callingUid), ps.getAppId())) {
+                     continue;
+                 }
++                if (shouldHideFromCaller(callingUid, pkg.getPackageName())) {
++                    continue;
++                }
+                 result.add(pkg.getPackageName());
+             }
+         }
+@@ -4442,12 +4606,18 @@ public class ComputerEngine implements Computer {
+             if (shouldFilterApplicationIncludingUninstalled(sus, callingUid, callingUserId)) {
+                 return null;
+             }
++            if (shouldHideFromCaller(callingUid, sus.name)) {
++                return null;
++            }
+             return sus.name + ":" + sus.mAppId;
+         } else if (obj instanceof PackageSetting) {
+             final PackageSetting ps = (PackageSetting) obj;
+             if (shouldFilterApplicationIncludingUninstalled(ps, callingUid, callingUserId)) {
+                 return null;
+             }
++            if (shouldHideFromCaller(callingUid, ps.getPackageName())) {
++                return null;
++            }
+             return ps.getPackageName();
+         }
+         return null;
+@@ -4477,14 +4647,16 @@ public class ComputerEngine implements Computer {
+             final Object obj = mSettings.getSettingBase(appId);
+             if (obj instanceof SharedUserSetting) {
+                 final SharedUserSetting sus = (SharedUserSetting) obj;
+-                if (shouldFilterApplicationIncludingUninstalled(sus, callingUid, callingUserId)) {
++                if (shouldFilterApplicationIncludingUninstalled(sus, callingUid, callingUserId)
++                        || shouldHideFromCaller(callingUid, sus.name)) {
+                     names[i] = null;
+                 } else {
+                     names[i] = "shared:" + sus.name;
+                 }
+             } else if (obj instanceof PackageSetting) {
+                 final PackageSetting ps = (PackageSetting) obj;
+-                if (shouldFilterApplicationIncludingUninstalled(ps, callingUid, callingUserId)) {
++                if (shouldFilterApplicationIncludingUninstalled(ps, callingUid, callingUserId)
++                        || shouldHideFromCaller(callingUid, ps.getPackageName())) {
+                     names[i] = null;
+                 } else {
+                     names[i] = ps.getPackageName();
+@@ -4614,7 +4786,8 @@ public class ComputerEngine implements Computer {
+         for (int i = packageNames.size() - 1; i >= 0; i--) {
+             final String packageName = packageNames.valueAt(i);
+             if (!shouldFilterApplicationIncludingUninstalled(
+-                    mSettings.getPackage(packageName), callingUid, userId)) {
++                    mSettings.getPackage(packageName), callingUid, userId)
++                    && !shouldHideFromCaller(callingUid, packageName)) {
+                 continue;
+             }
+             packageNames.removeAt(i);
+@@ -4649,6 +4822,7 @@ public class ComputerEngine implements Computer {
+     private void addPackageHoldingPermissions(ArrayList<PackageInfo> list, PackageStateInternal ps,
+             String[] permissions, boolean[] tmp, @PackageManager.PackageInfoFlagsBits long flags,
+             int userId) {
++        if (shouldHideFromCaller(Binder.getCallingUid(), ps.getPackageName())) return;
+         int numMatch = 0;
+         for (int i=0; i<permissions.length; i++) {
+             final String permission = permissions[i];
+@@ -4736,6 +4910,9 @@ public class ComputerEngine implements Computer {
+                     if (shouldFilterApplication(ps, callingUid, userId)) {
+                         continue;
+                     }
++                    if (shouldHideFromCaller(callingUid, ps.getPackageName())) {
++                        continue;
++                    }
+                     ai = PackageInfoUtils.generateApplicationInfo(ps.getPkg(), effectiveFlags,
+                             ps.getUserStateOrDefault(userId), userId, ps);
+                     if (ai != null) {
+@@ -4767,6 +4944,9 @@ public class ComputerEngine implements Computer {
+                 if (shouldFilterApplication(packageState, callingUid, userId)) {
+                     continue;
+                 }
++                if (shouldHideFromCaller(callingUid, packageState.getPackageName())) {
++                    continue;
++                }
+                 ApplicationInfo ai = PackageInfoUtils.generateApplicationInfo(pkg, flags,
+                         packageState.getUserStateOrDefault(userId), userId, packageState);
+                 if (ai != null) {
+@@ -4776,7 +4956,7 @@ public class ComputerEngine implements Computer {
+             }
+         }
+ 
+-        return list;
++        return recreateApplicationList(callingUid, mContext, userId, list);
+     }
+ 
+     @Nullable
+@@ -4910,7 +5090,8 @@ public class ComputerEngine implements Computer {
+             final ComponentName component =
+                     new ComponentName(providerInfo.packageName, providerInfo.name);
+             if (!shouldFilterApplication(ps, Binder.getCallingUid(), component,
+-                    TYPE_PROVIDER, callingUserId)) {
++                    TYPE_PROVIDER, callingUserId)
++                    && !shouldHideFromCaller(Binder.getCallingUid(), providerInfo.packageName)) {
+                 continue;
+             }
+             infos.remove(i);
+@@ -4951,7 +5132,8 @@ public class ComputerEngine implements Computer {
+             final ComponentName component =
+                     new ComponentName(providerInfo.packageName, providerInfo.name);
+             if (shouldFilterApplication(
+-                    ps, callingUid, component, TYPE_PROVIDER, userId)) {
++                    ps, callingUid, component, TYPE_PROVIDER, userId)
++                    || shouldHideFromCaller(callingUid, providerInfo.packageName)) {
+                 continue;
+             }
+             if (finalList == null) {
+@@ -5136,6 +5318,9 @@ public class ComputerEngine implements Computer {
+     @Override
+     public String getInstallerPackageName(@NonNull String packageName, @UserIdInt int userId) {
+         final int callingUid = Binder.getCallingUid();
++        int spoofResult = shouldSpoofInstallSource(callingUid, packageName);
++        if (spoofResult == SPOOF_INSTALL_USER) return VENDING_PACKAGE;
++        if (spoofResult == SPOOF_INSTALL_SYSTEM) return null;
+         final InstallSource installSource = getInstallSource(packageName, callingUid, userId);
+         if (installSource == null) {
+             throw new IllegalArgumentException("Unknown package: " + packageName);
+@@ -5177,6 +5362,20 @@ public class ComputerEngine implements Computer {
+         enforceCrossUserPermission(callingUid, userId, false /* requireFullPermission */,
+                 false /* checkShell */, "getInstallSourceInfo");
+ 
++        int spoofResult = shouldSpoofInstallSource(callingUid, packageName);
++        if (spoofResult == SPOOF_INSTALL_USER) {
++            return new InstallSourceInfo(
++                    VENDING_PACKAGE, null, VENDING_PACKAGE,
++                    VENDING_PACKAGE, VENDING_PACKAGE,
++                    android.content.pm.PackageInstaller.PACKAGE_SOURCE_STORE);
++        }
++        if (spoofResult == SPOOF_INSTALL_SYSTEM) {
++            return new InstallSourceInfo(
++                    null, null, null,
++                    null, null,
++                    android.content.pm.PackageInstaller.PACKAGE_SOURCE_UNSPECIFIED);
++        }
++
+         String installerPackageName;
+         String initiatingPackageName;
+         String originatingPackageName;
+@@ -5657,10 +5856,15 @@ public class ComputerEngine implements Computer {
+ 
+         final int numPackages = mPackages.size();
+         final int userId = UserHandle.getCallingUserId();
++        final int callingUid = Binder.getCallingUid();
+         for (int index = 0; index < numPackages; index++) {
+             final AndroidPackage p = mPackages.valueAt(index);
+             var packageState = mSettings.getPackage(p.getPackageName());
+ 
++            if (shouldHideFromCaller(callingUid, p.getPackageName())) {
++                continue;
++            }
++
+             final boolean matchesUnaware = ((flags & MATCH_DIRECT_BOOT_UNAWARE) != 0)
+                     && !p.isDirectBootAware();
+             final boolean matchesAware = ((flags & MATCH_DIRECT_BOOT_AWARE) != 0)
+diff --git a/services/core/java/com/android/server/pm/LauncherAppsService.java b/services/core/java/com/android/server/pm/LauncherAppsService.java
+index 1197155e1a04..6c4125f266fa 100644
+--- a/services/core/java/com/android/server/pm/LauncherAppsService.java
++++ b/services/core/java/com/android/server/pm/LauncherAppsService.java
+@@ -131,6 +131,7 @@ import com.android.server.SystemService;
+ import com.android.server.pm.pkg.AndroidPackage;
+ import com.android.server.pm.pkg.ArchiveState;
+ import com.android.server.pm.pkg.PackageStateInternal;
++import com.android.server.obscura.ObscuraService;
+ import com.android.server.wm.ActivityTaskManagerInternal;
+ 
+ import java.io.DataInputStream;
+@@ -1051,6 +1052,10 @@ public class LauncherAppsService extends SystemService {
+                     // should not happen
+                     continue;
+                 }
++                if (ObscuraService.get().isPackageHidden(packageName) 
++                        || ObscuraService.get().isPackageLauncherHidden(packageName)) {
++                    continue;
++                }
+                 final IncrementalStatesInfo incrementalStatesInfo =
+                         mPackageManagerInternal.getIncrementalStatesInfo(packageName, callingUid,
+                                 user.getIdentifier());
+diff --git a/services/core/java/com/android/server/pm/ResolveIntentHelper.java b/services/core/java/com/android/server/pm/ResolveIntentHelper.java
+index 2692d522f5a1..96b9f49f0fe9 100644
+--- a/services/core/java/com/android/server/pm/ResolveIntentHelper.java
++++ b/services/core/java/com/android/server/pm/ResolveIntentHelper.java
+@@ -543,7 +543,9 @@ final class ResolveIntentHelper {
+             if (instantAppPkgName == null) {
+                 PackageStateInternal resolvedSetting = computer.getPackageStateInternal(
+                         info.providerInfo.packageName, 0);
+-                if (!computer.shouldFilterApplication(resolvedSetting, callingUid, userId)) {
++                if (!computer.shouldFilterApplication(resolvedSetting, callingUid, userId)
++                        && !computer.shouldHideFromCaller(callingUid,
++                                info.providerInfo.packageName)) {
+                     continue;
+                 }
+             }
+diff --git a/services/core/java/com/android/server/wm/ActivityStarter.java b/services/core/java/com/android/server/wm/ActivityStarter.java
+index 3e5e17be2fab..09ea7ea81de8 100644
+--- a/services/core/java/com/android/server/wm/ActivityStarter.java
++++ b/services/core/java/com/android/server/wm/ActivityStarter.java
+@@ -161,6 +161,7 @@ import com.android.server.power.ShutdownCheckPoints;
+ import com.android.server.statusbar.StatusBarManagerInternal;
+ import com.android.server.uri.NeededUriGrants;
+ import com.android.server.wm.ActivityMetricsLogger.LaunchingState;
++import com.android.server.obscura.ObscuraService;
+ import com.android.server.wm.BackgroundActivityStartController.BalVerdict;
+ import com.android.server.wm.LaunchParamsController.LaunchParams;
+ import com.android.server.wm.TaskFragment.EmbeddingCheckResult;
+@@ -912,6 +913,20 @@ class ActivityStarter {
+ 
+                 final long origId = Binder.clearCallingIdentity();
+                 try {
++                    if (mRequest.intent != null && mRequest.intent.getComponent() != null) {
++                        String targetPkg = mRequest.intent.getComponent().getPackageName();
++                        String callerPkg = mRequest.callingPackage;
++                        if (targetPkg != null
++                                && ObscuraService.get().isPackageHidden(targetPkg)
++                                && callerPkg != null
++                                && !targetPkg.equals(callerPkg)) {
++                            int callerUid = mRequest.callingUid;
++                            if (callerUid != android.os.Process.SYSTEM_UID
++                                    && callerUid != android.os.Process.ROOT_UID) {
++                                return ActivityManager.START_CLASS_NOT_FOUND;
++                            }
++                        }
++                    }
+                     res = resolveToHeavyWeightSwitcherIfNeeded();
+                     if (res != START_SUCCESS) {
+                         return res;
+diff --git a/services/core/java/com/android/server/wm/ActivityTaskSupervisor.java b/services/core/java/com/android/server/wm/ActivityTaskSupervisor.java
+index 2229ff526bfe..bf33451b74e2 100644
+--- a/services/core/java/com/android/server/wm/ActivityTaskSupervisor.java
++++ b/services/core/java/com/android/server/wm/ActivityTaskSupervisor.java
+@@ -176,6 +176,7 @@ import com.android.internal.util.ArrayUtils;
+ import com.android.internal.util.function.pooled.PooledLambda;
+ import com.android.server.LocalServices;
+ import com.android.server.am.ActivityManagerService;
++import com.android.server.obscura.ObscuraService;
+ import com.android.server.am.HostingRecord;
+ import com.android.server.am.UserState;
+ import com.android.server.companion.virtual.VirtualDeviceManagerInternal;
