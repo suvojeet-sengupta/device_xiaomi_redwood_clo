@@ -12,12 +12,12 @@ fetch URL (config_pifUpdateUrl) is left empty.
 Change-Id: Ic7f6ac695c8a047a4b7a7877c745df5fe8a15909
 ---
  res/layout/pref_with_delete.xml               |  55 +++
- res/values/pif_strings.xml                    |  34 ++
+ res/values/pif_strings.xml                    |  35 ++
  res/xml/play_integrity_fix.xml                |  61 +++
  res/xml/security_advanced_settings.xml        |   7 +
  .../custom/spoofing/PifDataPreference.java    | 195 +++++++++
  .../custom/spoofing/PlayIntegrityFix.java     | 403 ++++++++++++++++++
- 6 files changed, 755 insertions(+)
+ 6 files changed, 756 insertions(+)
  create mode 100644 res/layout/pref_with_delete.xml
  create mode 100644 res/values/pif_strings.xml
  create mode 100644 res/xml/play_integrity_fix.xml
@@ -87,10 +87,10 @@ index 00000000000..29d76fbe2fc
 +</LinearLayout>
 diff --git a/res/values/pif_strings.xml b/res/values/pif_strings.xml
 new file mode 100644
-index 00000000000..f9e9bccd2a2
+index 00000000000..28fea019c4d
 --- /dev/null
 +++ b/res/values/pif_strings.xml
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,35 @@
 +<?xml version="1.0" encoding="utf-8"?>
 +<!--
 +     SPDX-FileCopyrightText: 2026 Neoteric OS
@@ -124,6 +124,7 @@ index 00000000000..f9e9bccd2a2
 +    <string name="pif_toast_invalid_file_selected">Not a JSON file. Choose a valid PIF JSON.</string>
 +    <!-- URL the "Fetch PIF (Penguin server)" button pulls from; empty disables it -->
 +    <string name="config_pifUpdateUrl" translatable="false"></string>
++    <string name="pif_delete_content_description">Clear PIF data</string>
 +</resources>
 diff --git a/res/xml/play_integrity_fix.xml b/res/xml/play_integrity_fix.xml
 new file mode 100644
