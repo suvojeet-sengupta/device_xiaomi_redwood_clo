@@ -136,7 +136,7 @@ ddr_type5="08"
 # Core control parameters for gold
 # Prefer CPU4 for isolation based on the thermal characteristics.
 echo 1 0 0 > /sys/devices/system/cpu/cpu4/core_ctl/not_preferred
-echo 2 > /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
+echo 1 > /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
 echo 60 > /sys/devices/system/cpu/cpu4/core_ctl/busy_up_thres
 echo 30 > /sys/devices/system/cpu/cpu4/core_ctl/busy_down_thres
 echo 100 > /sys/devices/system/cpu/cpu4/core_ctl/offline_delay_ms
@@ -183,12 +183,12 @@ echo "schedutil" > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor
 echo 0 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/down_rate_limit_us
 echo 0 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/up_rate_limit_us
 echo 1152000 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/hispeed_freq
-echo 691200 > /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq
+echo 300000 > /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq
 echo 1 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/pl
 
 # configure input boost settings
 echo "0:1324800" > /sys/devices/system/cpu/cpu_boost/input_boost_freq
-echo 200 > /sys/devices/system/cpu/cpu_boost/input_boost_ms
+echo 120 > /sys/devices/system/cpu/cpu_boost/input_boost_ms
 
 # configure governor settings for gold cluster
 echo "schedutil" > /sys/devices/system/cpu/cpufreq/policy4/scaling_governor
