@@ -1,4 +1,4 @@
-From 857919be73e88ec1f8526b9909e027ffbe0dfe54 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: suvojeet-sengupta <suvojitsengupta21@gmail.com>
 Date: Mon, 5 Oct 2026 21:49:21 +0000
 Subject: [PATCH] SystemUI: Optionally show 5G for the NR NSA override
@@ -7,6 +7,7 @@ Without a QTI NR icon type, an NR NSA override from TelephonyDisplayInfo
 is shown with the anchor network's icon, so devices whose modem never
 reports an NR icon type show 4G on 5G NSA networks. Add an overlayable
 config to show the override's 5G icon in that case.
+
 ---
  packages/SystemUI/res/values/nr_config.xml               | 6 ++++++
  .../mobile/domain/interactor/MobileIconInteractor.kt     | 9 ++++++++-
@@ -15,7 +16,7 @@ config to show the override's 5G icon in that case.
 
 diff --git a/packages/SystemUI/res/values/nr_config.xml b/packages/SystemUI/res/values/nr_config.xml
 new file mode 100644
-index 000000000000..57ef06e68dd7
+index 00000000..57ef06e6
 --- /dev/null
 +++ b/packages/SystemUI/res/values/nr_config.xml
 @@ -0,0 +1,6 @@
@@ -26,10 +27,10 @@ index 000000000000..57ef06e68dd7
 +    <bool name="config_nrNsaIconFromDisplayInfo">false</bool>
 +</resources>
 diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/pipeline/mobile/domain/interactor/MobileIconInteractor.kt b/packages/SystemUI/src/com/android/systemui/statusbar/pipeline/mobile/domain/interactor/MobileIconInteractor.kt
-index 166182113ea0..0bec562aaa5c 100644
+index 8f994d87..0513dea6 100644
 --- a/packages/SystemUI/src/com/android/systemui/statusbar/pipeline/mobile/domain/interactor/MobileIconInteractor.kt
 +++ b/packages/SystemUI/src/com/android/systemui/statusbar/pipeline/mobile/domain/interactor/MobileIconInteractor.kt
-@@ -537,7 +537,7 @@ class MobileIconInteractorImpl(
+@@ -555,7 +555,7 @@ class MobileIconInteractorImpl(
  
      private fun getLookupKey(resolvedNetworkType: ResolvedNetworkType,
                               customizationInfo: MobileIconCustomizationMode): String {
@@ -38,7 +39,7 @@ index 166182113ea0..0bec562aaa5c 100644
              if (customizationInfo.originNetworkType  == TelephonyManager.NETWORK_TYPE_UNKNOWN) {
                  MobileMappings.toIconKey(customizationInfo.voiceNetworkType)
              }else {
-@@ -548,6 +548,13 @@ class MobileIconInteractorImpl(
+@@ -566,6 +566,13 @@ class MobileIconInteractorImpl(
          }
      }
  
@@ -53,5 +54,5 @@ index 166182113ea0..0bec562aaa5c 100644
          return networkType == TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA_MMWAVE
                  || networkType == TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA
 -- 
-2.43.0
+2.55.0
 

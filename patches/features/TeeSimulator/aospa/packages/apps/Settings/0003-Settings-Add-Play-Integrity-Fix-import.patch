@@ -1,0 +1,1109 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: suvojeet-sengupta <suvojitsengupta21@gmail.com>
+Date: Tue, 13 Oct 2026 09:52:33 +0000
+Subject: [PATCH] Settings: Add Play Integrity Fix import
+
+Port PenguinOS PlayIntegrityFix: a Play Integrity Fix screen under More
+security & privacy to import a pif.json (written to Settings.Secure.
+PIF_DATA, which PIHooks already reads), toggle PIF off, and fetch/random
+update. Strings kept in their own pif_strings.xml; the Penguin-server
+fetch URL (config_pifUpdateUrl) is left empty.
+
+Change-Id: Ic7f6ac695c8a047a4b7a7877c745df5fe8a15909
+---
+ res/layout/pref_with_delete.xml               |  55 +++
+ res/values/pif_strings.xml                    |  35 ++
+ res/xml/play_integrity_fix.xml                |  61 +++
+ res/xml/security_advanced_settings.xml        |   7 +
+ .../custom/spoofing/PifDataPreference.java    | 195 +++++++++
+ .../custom/spoofing/PlayIntegrityFix.java     | 403 ++++++++++++++++++
+ .../custom/spoofing/SpoofingUtils.java        | 275 ++++++++++++
+ 7 files changed, 1031 insertions(+)
+ create mode 100644 res/layout/pref_with_delete.xml
+ create mode 100644 res/values/pif_strings.xml
+ create mode 100644 res/xml/play_integrity_fix.xml
+ create mode 100644 src/com/android/settings/custom/spoofing/PifDataPreference.java
+ create mode 100644 src/com/android/settings/custom/spoofing/PlayIntegrityFix.java
+ create mode 100644 src/com/android/settings/custom/spoofing/SpoofingUtils.java
+
+diff --git a/res/layout/pref_with_delete.xml b/res/layout/pref_with_delete.xml
+new file mode 100644
+index 0000000..29d76fb
+--- /dev/null
++++ b/res/layout/pref_with_delete.xml
+@@ -0,0 +1,55 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++     SPDX-FileCopyrightText: 2026 Neoteric OS
++     SPDX-License-Identifier: Apache-2.0
++-->
++<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    android:layout_width="match_parent"
++    android:layout_height="wrap_content"
++    android:gravity="center_vertical"
++    android:minHeight="?android:attr/listPreferredItemHeightSmall"
++    android:paddingStart="?android:attr/listPreferredItemPaddingStart"
++    android:paddingEnd="?android:attr/listPreferredItemPaddingEnd"
++    android:clipToPadding="false"
++    android:baselineAligned="false">
++
++    <LinearLayout
++        android:layout_width="0dp"
++        android:layout_height="wrap_content"
++        android:layout_weight="1"
++        android:orientation="vertical"
++        android:paddingTop="16dp"
++        android:paddingBottom="16dp">
++
++        <TextView
++            android:id="@+id/title"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:maxLines="1"
++            android:ellipsize="end"
++            android:textAppearance="?android:attr/textAppearanceListItem" />
++
++        <TextView
++            android:id="@+id/summary"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:textAppearance="?android:attr/textAppearanceListItemSecondary"
++            android:textColor="?android:attr/textColorSecondary"
++            android:maxLines="5"
++            android:ellipsize="end" />
++    </LinearLayout>
++
++    <ImageButton
++        android:id="@+id/delete_button"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:minWidth="48dp"
++        android:minHeight="48dp"
++        android:layout_gravity="center_vertical"
++        android:src="@drawable/ic_trash_can"
++        android:background="?android:attr/selectableItemBackgroundBorderless"
++        android:contentDescription="@string/pif_delete_content_description"
++        android:duplicateParentState="true"
++        android:layout_marginStart="16dp"
++        android:layout_marginEnd="8dp" />
++</LinearLayout>
+diff --git a/res/values/pif_strings.xml b/res/values/pif_strings.xml
+new file mode 100644
+index 0000000..28fea01
+--- /dev/null
++++ b/res/values/pif_strings.xml
+@@ -0,0 +1,35 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++     SPDX-FileCopyrightText: 2026 Neoteric OS
++     SPDX-License-Identifier: Apache-2.0
++-->
++<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
++    <!-- Play Integrity Fix -->
++    <string name="play_integrity_fix_title">Play Integrity Fix</string>
++    <string name="pif_master_switch_title">Disable Play Integrity Fix</string>
++    <string name="pif_master_switch_summary">Disable all prop imitation for Google Play Services</string>
++    <string name="pif_category_title">Play Integrity Fix</string>
++    <string name="pif_data_title">Select PIF JSON to spoof</string>
++    <string name="pif_data_summary">Select PIF JSON used for prop attestation spoofing for Google Mobile Services and Play Store. Click the delete button to reset the PIF data props and use dynamic PIF props which are used by default.</string>
++    <string name="pif_data_loaded_summary">Loaded %1$d props (%2$s)</string>
++    <string name="pif_update_category_title">Fetch updates</string>
++    <string name="auto_update_pif_title">Automatic PIF update</string>
++    <string name="auto_update_pif_summary">Periodically check and update Play Integrity fix in the background</string>
++    <string name="pif_update_title">Fetch PIF (Penguin server)</string>
++    <string name="pif_update_summary">Fetch updated PIF from Penguin server. This will replace any custom PIF.</string>
++    <string name="pif_update_random_title">Fetch PIF (Random)</string>
++    <string name="pif_update_random_summary">Get random spoofing device from Google list (Requires internet connection)</string>
++    <string name="pif_update_success">Successfully spoofed as %1$s for Play Integrity.</string>
++    <string name="pif_update_failed">Failed to fetch random PIF properties</string>
++    <string name="pif_random_fetching_title">Please wait</string>
++    <string name="pif_random_fetching_message">Fetching PIF properties...</string>
++    <string name="pif_props_category_title">Current spoofed model</string>
++    <string name="pif_props_title">Play Integrity current spoofed model</string>
++    <string name="pif_props_summary">Show all currently active PIF properties</string>
++    <string name="pif_toast_file_loaded">PIF JSON loaded</string>
++    <string name="pif_toast_file_cleared">PIF JSON cleared</string>
++    <string name="pif_toast_invalid_file_selected">Not a JSON file. Choose a valid PIF JSON.</string>
++    <!-- URL the "Fetch PIF (Penguin server)" button pulls from; empty disables it -->
++    <string name="config_pifUpdateUrl" translatable="false"></string>
++    <string name="pif_delete_content_description">Clear PIF data</string>
++</resources>
+diff --git a/res/xml/play_integrity_fix.xml b/res/xml/play_integrity_fix.xml
+new file mode 100644
+index 0000000..30adefd
+--- /dev/null
++++ b/res/xml/play_integrity_fix.xml
+@@ -0,0 +1,61 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++     SPDX-FileCopyrightText: 2026 Neoteric OS
++     SPDX-License-Identifier: Apache-2.0
++-->
++<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:settings="http://schemas.android.com/apk/res-auto"
++    android:key="play_integrity_fix_screen"
++    android:title="@string/play_integrity_fix_title">
++
++    <!-- Master Switch -->
++    <SwitchPreferenceCompat
++        android:key="persist.sys.pihooks.disable.gms_props"
++        android:title="@string/pif_master_switch_title"
++        android:summary="@string/pif_master_switch_summary"
++        android:defaultValue="false" />
++
++    <!-- PIF Data Category -->
++    <PreferenceCategory
++        android:key="pif_data_category"
++        android:title="@string/pif_category_title">
++
++        <com.android.settings.custom.spoofing.PifDataPreference
++            android:key="pif_data_setting"
++            android:title="@string/pif_data_title" />
++    </PreferenceCategory>
++
++    <!-- PIF Updates Category -->
++    <PreferenceCategory
++        android:key="pif_updates_category"
++        android:title="@string/pif_update_category_title">
++
++        <SwitchPreferenceCompat
++            android:key="auto_update_pif"
++            android:title="@string/auto_update_pif_title"
++            android:summary="@string/auto_update_pif_summary"
++            android:defaultValue="false" />
++
++        <Preference
++            android:key="pif_update"
++            android:title="@string/pif_update_title"
++            android:summary="@string/pif_update_summary" />
++
++        <Preference
++            android:key="pif_update_random"
++            android:title="@string/pif_update_random_title"
++            android:summary="@string/pif_update_random_summary" />
++    </PreferenceCategory>
++
++    <!-- Current Spoofed Model Category -->
++    <PreferenceCategory
++        android:key="pif_props_category"
++        android:title="@string/pif_props_category_title">
++
++        <Preference
++            android:key="pif_props"
++            android:title="@string/pif_props_title"
++            android:summary="@string/pif_props_summary" />
++    </PreferenceCategory>
++
++</PreferenceScreen>
+diff --git a/res/xml/security_advanced_settings.xml b/res/xml/security_advanced_settings.xml
+index cdb65ea..ff186cc 100644
+--- a/res/xml/security_advanced_settings.xml
++++ b/res/xml/security_advanced_settings.xml
+@@ -137,6 +137,13 @@
+         android:summary="@string/tee_simulator_summary"
+         android:fragment="com.android.settings.custom.spoofing.TeeSimulatorSettings"/>
+ 
++    <Preference
++        android:order="307"
++        android:key="play_integrity_fix"
++        android:title="@string/play_integrity_fix_title"
++        android:summary="@string/pif_data_summary"
++        android:fragment="com.android.settings.custom.spoofing.PlayIntegrityFix"/>
++
+     <PreferenceCategory
+         android:order="310"
+         android:key="work_profile_category"
+diff --git a/src/com/android/settings/custom/spoofing/PifDataPreference.java b/src/com/android/settings/custom/spoofing/PifDataPreference.java
+new file mode 100644
+index 0000000..f275419
+--- /dev/null
++++ b/src/com/android/settings/custom/spoofing/PifDataPreference.java
+@@ -0,0 +1,195 @@
++/*
++ * SPDX-FileCopyrightText: 2026 kenway214
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++package com.android.settings.custom.spoofing;
++
++import android.app.ActivityManager;
++import android.content.ContentResolver;
++import android.content.Context;
++import android.content.Intent;
++import android.net.Uri;
++import android.provider.Settings;
++import android.text.TextUtils;
++import android.util.AttributeSet;
++import android.util.Log;
++import android.view.View;
++import android.widget.ImageButton;
++import android.widget.TextView;
++import android.widget.Toast;
++
++import androidx.activity.result.ActivityResultLauncher;
++import androidx.preference.Preference;
++import androidx.preference.PreferenceViewHolder;
++
++import com.android.settings.R;
++
++import org.json.JSONArray;
++import org.json.JSONException;
++import org.json.JSONObject;
++
++import java.io.BufferedReader;
++import java.io.IOException;
++import java.io.InputStream;
++import java.io.InputStreamReader;
++import java.nio.charset.StandardCharsets;
++import java.text.SimpleDateFormat;
++import java.util.Date;
++import java.util.Locale;
++
++public class PifDataPreference extends Preference {
++
++    private static final String TAG = "PifDataPref";
++    private ActivityResultLauncher<Intent> mFilePickerLauncher;
++
++    public PifDataPreference(Context context, AttributeSet attrs) {
++        super(context, attrs);
++        setLayoutResource(R.layout.pref_with_delete);
++    }
++
++    public void setFilePickerLauncher(ActivityResultLauncher<Intent> launcher) {
++        this.mFilePickerLauncher = launcher;
++    }
++
++    @Override
++    public void onBindViewHolder(PreferenceViewHolder holder) {
++        super.onBindViewHolder(holder);
++        final Context ctx = getContext();
++        if (ctx == null) return;
++        final ContentResolver cr = ctx.getContentResolver();
++
++        TextView title = (TextView) holder.findViewById(R.id.title);
++        TextView summary = (TextView) holder.findViewById(R.id.summary);
++        ImageButton deleteButton = (ImageButton) holder.findViewById(R.id.delete_button);
++
++        if (title != null) {
++            title.setText(getTitle());
++        }
++
++        String json = Settings.Secure.getString(cr, Settings.Secure.PIF_DATA);
++        boolean hasData = !TextUtils.isEmpty(json);
++
++        if (summary != null) {
++            if (hasData) {
++                String pifTimestamp = Settings.Secure.getString(cr, Settings.Secure.PIF_DATA_TIMESTAMP);
++                int propsCount = countPifProps(json);
++                String ts = pifTimestamp != null ? pifTimestamp
++                        : new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(new Date());
++                summary.setText(ctx.getString(R.string.pif_data_loaded_summary, propsCount, ts));
++            } else {
++                summary.setText(ctx.getString(R.string.pif_data_summary));
++            }
++        }
++
++        if (deleteButton != null) {
++            deleteButton.setVisibility(hasData ? View.VISIBLE : View.GONE);
++            deleteButton.setEnabled(hasData && isEnabled());
++
++            deleteButton.setOnClickListener(v -> {
++                Settings.Secure.putString(cr, Settings.Secure.PIF_DATA, null);
++                Settings.Secure.putString(cr, Settings.Secure.PIF_DATA_TIMESTAMP, null);
++                Toast.makeText(ctx, ctx.getString(R.string.pif_toast_file_cleared), Toast.LENGTH_SHORT).show();
++                notifyChanged();
++                killPackages();
++            });
++        }
++
++        holder.itemView.setOnClickListener(v -> {
++            if (mFilePickerLauncher != null && isEnabled()) {
++                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
++                intent.setType("*/*");
++                intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"application/json", "text/json"});
++                intent.addCategory(Intent.CATEGORY_OPENABLE);
++                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
++                mFilePickerLauncher.launch(intent);
++            }
++        });
++    }
++
++    public void handleFileSelected(Uri uri) {
++        final Context ctx = getContext();
++        if (ctx == null) return;
++        final ContentResolver cr = ctx.getContentResolver();
++
++        if (uri == null) {
++            Toast.makeText(ctx,
++                    ctx.getString(R.string.pif_toast_invalid_file_selected), Toast.LENGTH_SHORT).show();
++            return;
++        }
++
++        final String type = cr.getType(uri);
++        boolean isJsonMime = "application/json".equals(type) || "text/json".equals(type);
++        boolean hasJsonExt = (uri.getPath() != null && uri.getPath().toLowerCase().endsWith(".json"));
++        if (!isJsonMime && !hasJsonExt) {
++            Toast.makeText(ctx,
++                    ctx.getString(R.string.pif_toast_invalid_file_selected), Toast.LENGTH_SHORT).show();
++            return;
++        }
++
++        try (InputStream inputStream = cr.openInputStream(uri);
++             BufferedReader reader = new BufferedReader(
++                     new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
++
++            StringBuilder jsonContent = new StringBuilder();
++            String line;
++            while ((line = reader.readLine()) != null) {
++                jsonContent.append(line).append('\n');
++            }
++
++            String json = jsonContent.toString();
++
++            Settings.Secure.putString(cr, Settings.Secure.PIF_DATA, json);
++            String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(new Date());
++            Settings.Secure.putString(cr, Settings.Secure.PIF_DATA_TIMESTAMP, timestamp);
++            Toast.makeText(ctx,
++                    ctx.getString(R.string.pif_toast_file_loaded), Toast.LENGTH_SHORT).show();
++            notifyChanged();
++            killPackages();
++        } catch (IOException e) {
++            Log.e(TAG, "Failed to read JSON file", e);
++            Toast.makeText(ctx,
++                    ctx.getString(R.string.pif_toast_invalid_file_selected), Toast.LENGTH_SHORT).show();
++        }
++    }
++
++    private int countPifProps(String json) {
++        if (json == null || json.trim().isEmpty()) return 0;
++        try {
++            String trimmed = json.trim();
++            if (trimmed.startsWith("{")) {
++                JSONObject obj = new JSONObject(trimmed);
++                if (obj.has("props") && obj.opt("props") instanceof JSONObject) {
++                    return ((JSONObject) obj.get("props")).length();
++                }
++                return obj.length();
++            } else if (trimmed.startsWith("[")) {
++                JSONArray arr = new JSONArray(trimmed);
++                return arr.length();
++            }
++        } catch (JSONException ignore) {
++        }
++        return 0;
++    }
++
++    private void killPackages() {
++        final Context ctx = getContext();
++        if (ctx == null) return;
++        try {
++            ActivityManager am = (ActivityManager) ctx.getSystemService(Context.ACTIVITY_SERVICE);
++            if (am == null) return;
++            String[] packages = { "com.google.android.gms", "com.android.vending" };
++            for (String pkg : packages) {
++                try {
++                    am.getClass()
++                            .getMethod("forceStopPackage", String.class)
++                            .invoke(am, pkg);
++                    Log.i(TAG, pkg + " process killed");
++                } catch (Exception ignored) {
++                }
++            }
++        } catch (Exception e) {
++            Log.e(TAG, "Failed to kill packages", e);
++        }
++    }
++}
+diff --git a/src/com/android/settings/custom/spoofing/PlayIntegrityFix.java b/src/com/android/settings/custom/spoofing/PlayIntegrityFix.java
+new file mode 100644
+index 0000000..0efc0e2
+--- /dev/null
++++ b/src/com/android/settings/custom/spoofing/PlayIntegrityFix.java
+@@ -0,0 +1,403 @@
++/*
++ * SPDX-FileCopyrightText: 2026 kenway214
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++package com.android.settings.custom.spoofing;
++
++import android.app.Activity;
++import android.app.AlertDialog;
++import android.app.ProgressDialog;
++import android.app.settings.SettingsEnums;
++import android.content.Context;
++import android.content.Intent;
++import android.net.Uri;
++import android.os.AsyncTask;
++import android.os.Bundle;
++import android.os.SystemProperties;
++import android.provider.SearchIndexableResource;
++import android.provider.Settings;
++import android.text.TextUtils;
++import android.util.Log;
++import android.view.View;
++import android.widget.Toast;
++
++import androidx.activity.result.ActivityResultLauncher;
++import androidx.activity.result.contract.ActivityResultContracts;
++import androidx.annotation.NonNull;
++import androidx.preference.Preference;
++import androidx.preference.SwitchPreferenceCompat;
++
++import com.android.settings.R;
++import com.android.settings.dashboard.DashboardFragment;
++import com.android.settings.search.BaseSearchIndexProvider;
++import com.android.settingslib.search.SearchIndexable;
++
++import org.json.JSONException;
++import org.json.JSONObject;
++
++import java.io.BufferedReader;
++import java.io.InputStreamReader;
++import java.net.HttpURLConnection;
++import java.net.URL;
++import java.nio.charset.StandardCharsets;
++import java.util.Arrays;
++import java.util.List;
++import java.util.Map;
++
++@SearchIndexable
++public class PlayIntegrityFix extends DashboardFragment {
++    private static final String TAG = "PlayIntegrityFix";
++
++    private static final String PIF_DATA_KEY = "pif_data_setting";
++    private static final String PIF_PROPS_KEY = "pif_props";
++    private static final String PIF_UPDATE_KEY = "pif_update";
++    private static final String PIF_UPDATE_RANDOM_KEY = "pif_update_random";
++    private static final String PIF_MASTER_SWITCH_KEY = "persist.sys.pihooks.disable.gms_props";
++    private static final String KEY_AUTO_UPDATE_PIF = "auto_update_pif";
++
++    private ActivityResultLauncher<Intent> mPifFilePickerLauncher;
++    private PifDataPreference mPifDataPreference;
++    private SwitchPreferenceCompat mPifMasterSwitch;
++    private SwitchPreferenceCompat mAutoUpdateSwitch;
++    private Preference mPifProps;
++    private Preference mPifUpdate;
++    private Preference mPifUpdateRandom;
++
++    @Override
++    public int getMetricsCategory() {
++        return SettingsEnums.SETTINGS_SYSTEM_CATEGORY;
++    }
++
++    @Override
++    protected String getLogTag() {
++        return TAG;
++    }
++
++    @Override
++    protected int getPreferenceScreenResId() {
++        return R.xml.play_integrity_fix;
++    }
++
++    @Override
++    public void onAttach(@NonNull Context context) {
++        super.onAttach(context);
++
++        mPifFilePickerLauncher = registerForActivityResult(
++                new ActivityResultContracts.StartActivityForResult(),
++                result -> {
++                    if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
++                        Uri uri = result.getData().getData();
++                        Preference pref = findPreference(PIF_DATA_KEY);
++                        if (pref instanceof PifDataPreference) {
++                            ((PifDataPreference) pref).handleFileSelected(uri);
++                        }
++                    }
++                }
++        );
++    }
++
++    @Override
++    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
++        super.onViewCreated(view, savedInstanceState);
++
++        mPifDataPreference = findPreference(PIF_DATA_KEY);
++        mPifMasterSwitch = findPreference(PIF_MASTER_SWITCH_KEY);
++        mAutoUpdateSwitch = findPreference(KEY_AUTO_UPDATE_PIF);
++        mPifProps = findPreference(PIF_PROPS_KEY);
++        mPifUpdate = findPreference(PIF_UPDATE_KEY);
++        mPifUpdateRandom = findPreference(PIF_UPDATE_RANDOM_KEY);
++
++        if (mPifDataPreference != null) {
++            mPifDataPreference.setFilePickerLauncher(mPifFilePickerLauncher);
++        }
++
++        if (mPifMasterSwitch != null) {
++            boolean isChecked = SystemProperties.getBoolean(PIF_MASTER_SWITCH_KEY, false);
++            mPifMasterSwitch.setChecked(isChecked);
++            updatePifPreferencesState(!isChecked);
++
++            mPifMasterSwitch.setOnPreferenceChangeListener((preference, newValue) -> {
++                boolean disabled = (Boolean) newValue;
++                SystemProperties.set(PIF_MASTER_SWITCH_KEY, disabled ? "true" : "false");
++                updatePifPreferencesState(!disabled);
++                if (disabled) {
++                    clearPifProps();
++                }
++                return true;
++            });
++        }
++
++        if (mAutoUpdateSwitch != null) {
++            boolean autoUpdateEnabled = Settings.Secure.getInt(
++                    requireContext().getContentResolver(),
++                    Settings.Secure.AUTO_UPDATE_PIF, 0) == 1;
++            mAutoUpdateSwitch.setChecked(autoUpdateEnabled);
++            mAutoUpdateSwitch.setOnPreferenceChangeListener((preference, newValue) -> {
++                boolean enabled = (Boolean) newValue;
++                Settings.Secure.putInt(
++                        requireContext().getContentResolver(),
++                        Settings.Secure.AUTO_UPDATE_PIF, enabled ? 1 : 0);
++                return true;
++            });
++        }
++
++        if (mPifProps != null) {
++            mPifProps.setOnPreferenceClickListener(preference -> {
++                showPifProps();
++                return true;
++            });
++        }
++
++        if (mPifUpdate != null) {
++            mPifUpdate.setOnPreferenceClickListener(preference -> {
++                new UpdatePifTask().execute();
++                return true;
++            });
++        }
++
++        if (mPifUpdateRandom != null) {
++            mPifUpdateRandom.setOnPreferenceClickListener(preference -> {
++                new UpdateRandomPifTask().execute();
++                return true;
++            });
++        }
++    }
++
++    private void updatePifPreferencesState(boolean enabled) {
++        if (mPifDataPreference != null) mPifDataPreference.setEnabled(enabled);
++        if (mAutoUpdateSwitch != null) mAutoUpdateSwitch.setEnabled(enabled);
++        if (mPifProps != null) mPifProps.setEnabled(enabled);
++        if (mPifUpdate != null) mPifUpdate.setEnabled(enabled);
++        if (mPifUpdateRandom != null) mPifUpdateRandom.setEnabled(enabled);
++    }
++
++    private void clearPifProps() {
++        Settings.Secure.putString(requireContext().getContentResolver(), Settings.Secure.PIF_DATA, null);
++        Settings.Secure.putString(requireContext().getContentResolver(), Settings.Secure.PIF_DATA_TIMESTAMP, null);
++        Settings.Secure.putString(requireContext().getContentResolver(), Settings.Secure.FETCHED_PIF, null);
++        killGmsPackages();
++        Toast.makeText(requireContext(), R.string.pif_toast_file_cleared, Toast.LENGTH_SHORT).show();
++    }
++
++    private void showPifProps() {
++        String fetchedPif = Settings.Secure.getString(requireContext().getContentResolver(),
++                Settings.Secure.FETCHED_PIF);
++        String pifData = Settings.Secure.getString(requireContext().getContentResolver(),
++                Settings.Secure.PIF_DATA);
++
++        StringBuilder sb = new StringBuilder();
++        sb.append("Auto-updated / Fetched PIF:\n");
++        if (!TextUtils.isEmpty(fetchedPif)) {
++            try {
++                JSONObject json = new JSONObject(fetchedPif);
++                sb.append(json.toString(4));
++            } catch (JSONException e) {
++                sb.append(fetchedPif);
++            }
++        } else {
++            sb.append("Not set");
++        }
++
++        sb.append("\n\nManually imported PIF:\n");
++        if (!TextUtils.isEmpty(pifData)) {
++            try {
++                JSONObject json = new JSONObject(pifData);
++                sb.append(json.toString(4));
++            } catch (JSONException e) {
++                sb.append(pifData);
++            }
++        } else {
++            sb.append("Not set");
++        }
++
++        if (TextUtils.isEmpty(fetchedPif) && TextUtils.isEmpty(pifData)) {
++            sb.append("\n\nDefault ROM PIF (built-in overlay):\n");
++            try {
++                String[] defaultProps = requireContext().getResources().getStringArray(
++                        com.android.internal.R.array.config_certifiedBuildProperties);
++                for (String prop : defaultProps) {
++                    sb.append("  ").append(prop).append('\n');
++                }
++            } catch (Exception ignored) {
++                sb.append("Not configured");
++            }
++        }
++
++        new AlertDialog.Builder(requireContext())
++                .setTitle(R.string.pif_props_title)
++                .setMessage(sb.toString())
++                .setPositiveButton(android.R.string.ok, null)
++                .show();
++    }
++
++    private class UpdatePifTask extends AsyncTask<Void, Void, String> {
++        private ProgressDialog mProgressDialog;
++
++        @Override
++        protected void onPreExecute() {
++            mProgressDialog = new ProgressDialog(requireContext());
++            mProgressDialog.setTitle(getString(R.string.pif_random_fetching_title));
++            mProgressDialog.setMessage(getString(R.string.pif_random_fetching_message));
++            mProgressDialog.setCancelable(false);
++            mProgressDialog.show();
++        }
++
++        @Override
++        protected String doInBackground(Void... voids) {
++            try {
++                String updateUrl = requireContext().getResources().getString(
++                        com.android.internal.R.string.config_pifUpdateUrl);
++                if (TextUtils.isEmpty(updateUrl)) {
++                    return null;
++                }
++                URL url = new URL(updateUrl);
++                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
++                urlConnection.setConnectTimeout(10000);
++                urlConnection.setReadTimeout(10000);
++                try (BufferedReader reader = new BufferedReader(
++                        new InputStreamReader(urlConnection.getInputStream(), StandardCharsets.UTF_8))) {
++                    StringBuilder response = new StringBuilder();
++                    String line;
++                    while ((line = reader.readLine()) != null) {
++                        response.append(line);
++                    }
++                    return response.toString();
++                } finally {
++                    urlConnection.disconnect();
++                }
++            } catch (Exception e) {
++                Log.e(TAG, "Failed to download PIF from URL", e);
++                return null;
++            }
++        }
++
++        @Override
++        protected void onPostExecute(String result) {
++            if (mProgressDialog != null && mProgressDialog.isShowing()) {
++                mProgressDialog.dismiss();
++            }
++
++            if (!TextUtils.isEmpty(result)) {
++                Settings.Secure.putString(requireContext().getContentResolver(),
++                        Settings.Secure.PIF_DATA, null);
++                Settings.Secure.putString(requireContext().getContentResolver(),
++                        Settings.Secure.PIF_DATA_TIMESTAMP, null);
++                Settings.Secure.putString(requireContext().getContentResolver(),
++                        Settings.Secure.FETCHED_PIF, result);
++                Toast.makeText(requireContext(), "PIF updated successfully", Toast.LENGTH_SHORT)
++                        .show();
++                killGmsPackages();
++            } else {
++                Toast.makeText(requireContext(), "Failed to update PIF", Toast.LENGTH_SHORT).show();
++            }
++        }
++    }
++
++    private class UpdateRandomPifTask extends AsyncTask<Void, Void, Map<String, String>> {
++        private ProgressDialog mProgressDialog;
++
++        @Override
++        protected void onPreExecute() {
++            mProgressDialog = new ProgressDialog(requireContext());
++            mProgressDialog.setTitle(getString(R.string.pif_random_fetching_title));
++            mProgressDialog.setMessage(getString(R.string.pif_random_fetching_message));
++            mProgressDialog.setCancelable(false);
++            mProgressDialog.show();
++        }
++
++        @Override
++        protected Map<String, String> doInBackground(Void... voids) {
++            try {
++                String currentDevice = SystemProperties.get("persist.sys.pihooks_DEVICE", "");
++                if (TextUtils.isEmpty(currentDevice)) {
++                    return SpoofingUtils.getRandomFingerprint();
++                }
++                return SpoofingUtils.getRandomFingerprint(currentDevice);
++            } catch (Exception e) {
++                Log.e(TAG, "Error fetching random PIF properties", e);
++                return null;
++            }
++        }
++
++        @Override
++        protected void onPostExecute(Map<String, String> newValues) {
++            if (mProgressDialog != null && mProgressDialog.isShowing()) {
++                mProgressDialog.dismiss();
++            }
++
++            if (newValues == null || newValues.isEmpty()) {
++                Toast.makeText(requireContext(), R.string.pif_update_failed, Toast.LENGTH_SHORT)
++                        .show();
++                return;
++            }
++
++            final JSONObject json = new JSONObject();
++            String spoofedModel = newValues.get("MODEL");
++            try {
++                for (Map.Entry<String, String> entry : newValues.entrySet()) {
++                    final String key = entry.getKey();
++                    final String value = entry.getValue();
++                    if (value == null) continue;
++                    json.put(key, value);
++                }
++                Settings.Secure.putString(requireContext().getContentResolver(),
++                        Settings.Secure.PIF_DATA, null);
++                Settings.Secure.putString(requireContext().getContentResolver(),
++                        Settings.Secure.PIF_DATA_TIMESTAMP, null);
++                Settings.Secure.putString(requireContext().getContentResolver(),
++                        Settings.Secure.FETCHED_PIF, json.toString());
++            } catch (JSONException e) {
++                Log.e(TAG, "Failed serializing random PIF properties", e);
++                Toast.makeText(requireContext(), R.string.pif_update_failed, Toast.LENGTH_SHORT)
++                        .show();
++                return;
++            }
++
++            Toast.makeText(requireContext(),
++                    getString(R.string.pif_update_success,
++                            spoofedModel != null ? spoofedModel : "unknown"),
++                    Toast.LENGTH_LONG).show();
++
++            killGmsPackages();
++        }
++    }
++
++    private void killGmsPackages() {
++        try {
++            android.app.ActivityManager am = (android.app.ActivityManager)
++                    requireContext().getSystemService(Context.ACTIVITY_SERVICE);
++            if (am == null) return;
++            String[] packages = {
++                    "com.google.android.gms",
++                    "com.android.vending",
++                    "com.google.android.gsf",
++                    "com.google.android.apps.walletnfcrel",
++                    "com.google.android.googlequicksearchbox",
++                    "com.google.android.as",
++                    "com.google.android.aicore",
++                    "com.google.android.apps.aiwallpapers",
++                    "com.google.android.apps.photos"
++            };
++            for (String pkg : packages) {
++                try {
++                    am.getClass().getMethod("forceStopPackage", String.class).invoke(am, pkg);
++                } catch (Exception ignored) {
++                }
++            }
++        } catch (Exception e) {
++            Log.e(TAG, "Failed to kill GMS packages", e);
++        }
++    }
++
++    public static final BaseSearchIndexProvider SEARCH_INDEX_DATA_PROVIDER =
++            new BaseSearchIndexProvider() {
++                @Override
++                public List<SearchIndexableResource> getXmlResourcesToIndex(
++                        Context context, boolean enabled) {
++                    final SearchIndexableResource sir = new SearchIndexableResource(context);
++                    sir.xmlResId = R.xml.play_integrity_fix;
++                    return Arrays.asList(sir);
++                }
++            };
++}
+diff --git a/src/com/android/settings/custom/spoofing/SpoofingUtils.java b/src/com/android/settings/custom/spoofing/SpoofingUtils.java
+new file mode 100644
+index 0000000..9fc2f5c
+--- /dev/null
++++ b/src/com/android/settings/custom/spoofing/SpoofingUtils.java
+@@ -0,0 +1,275 @@
++/*
++ * SPDX-FileCopyrightText: 2026 kenway214
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++
++package com.android.settings.custom.spoofing;
++
++import android.util.Log;
++
++import java.io.BufferedReader;
++import java.io.IOException;
++import java.io.InputStreamReader;
++import java.net.HttpURLConnection;
++import java.net.URL;
++import java.nio.charset.StandardCharsets;
++import java.util.ArrayList;
++import java.util.LinkedHashMap;
++import java.util.List;
++import java.util.Map;
++import java.util.Objects;
++import java.util.concurrent.ThreadLocalRandom;
++import java.util.regex.Matcher;
++import java.util.regex.Pattern;
++
++public class SpoofingUtils {
++    private static final String TAG = "SpoofingUtils";
++
++    private static volatile String sPixelVersionsHtml;
++    private static volatile String sPixelLatestHtml;
++    private static volatile String sPixelFlashHtml;
++    private static volatile String sPixelFactoryImageHtml;
++    private static volatile String sFlashKey;
++    private static volatile String sLatestBuildUrl;
++
++    private static final String ANDROID_FLASH_URL = "https://flash.android.com/";
++    private static final String ANDROID_DEV_URL = "https://developer.android.com/";
++    private static final String ANDROID_DEV_VERSIONS_URL = ANDROID_DEV_URL + "about/versions";
++    private static final String PIXEL_SEC_BULLETIN_URL =
++            "https://source.android.com/docs/security/bulletin/pixel";
++    private static final String PIXEL_STATION_URL =
++            "https://content-flashstation-pa.googleapis.com/v1/builds";
++
++    private static Map<String, String> sBetaDevices;
++
++    private static class Regex {
++        private static final Pattern DEVICE_ROW = Pattern.compile(
++                "<tr\\s+id=\"([^\"]+)\"[^>]*>\\s*<td>([^<]+)</td>",
++                Pattern.CASE_INSENSITIVE
++        );
++        private static final Pattern DATA_CLIENT_CONFIG_PATTERN = Pattern.compile(
++                "data-client-config\\s*=\\s*\"(?:[^,]*,){2}\\s*&quot;([^&]+)&quot;",
++                Pattern.CASE_INSENSITIVE
++        );
++        private static final Pattern RC_NAME =
++                Pattern.compile("\"releaseCandidateName\"\\s*:\\s*\"([^\"]+)\"");
++        private static final Pattern BUILD_ID =
++                Pattern.compile("\"buildId\"\\s*:\\s*\"([^\"]+)\"");
++        private static final String SECURITY_PATCH_TEMPLATE = "<td>%s</td>\\s*<td>([^<]+)</td>";
++        private static final Pattern CANARY_ID = Pattern.compile("\"id\"\\s*:\\s*\"canary-([^\"]+)\"");
++        private static final Pattern IS_CANARY_PATTERN = Pattern.compile(
++                "\\{[^}]*\"canary\"\\s*:\\s*true[^}]*\\}",
++                Pattern.CASE_INSENSITIVE | Pattern.DOTALL
++        );
++    }
++
++    private static String getHtml(String url, Map<String, String> headers) throws IOException {
++        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
++        conn.setConnectTimeout(10000);
++        conn.setReadTimeout(10000);
++        if (headers != null) {
++            for (Map.Entry<String, String> e : headers.entrySet()) {
++                conn.setRequestProperty(e.getKey(), e.getValue());
++            }
++        }
++        try (BufferedReader br = new BufferedReader(
++                new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
++            StringBuilder sb = new StringBuilder();
++            String line;
++            while ((line = br.readLine()) != null) {
++                sb.append(line).append('\n');
++            }
++            return sb.toString();
++        } finally {
++            conn.disconnect();
++        }
++    }
++
++    private static String unescapeHtml(String s) {
++        if (s == null) return null;
++        return s.replace("&quot;", "\"")
++                .replace("&amp;", "&")
++                .replace("&lt;", "<")
++                .replace("&gt;", ">");
++    }
++
++    private static List<String> extractLinks(String html, Pattern filter) {
++        List<String> links = new ArrayList<>();
++        Matcher m = filter.matcher(html);
++        while (m.find()) {
++            links.add(m.group());
++        }
++        return links;
++    }
++
++    private static String pickLastSorted(List<String> links) {
++        if (links == null || links.isEmpty()) return null;
++        links.sort(String::compareTo);
++        return links.get(links.size() - 1);
++    }
++
++    private static void getLatestCanary() throws IOException {
++        sPixelVersionsHtml = getHtml(ANDROID_DEV_VERSIONS_URL, null);
++        Pattern p = Pattern.compile(Pattern.quote(ANDROID_DEV_VERSIONS_URL) + "/.*[0-9]");
++        List<String> links = extractLinks(sPixelVersionsHtml, p);
++        sLatestBuildUrl = pickLastSorted(links);
++        if (sLatestBuildUrl == null) {
++            throw new IOException("Failed to get latest build URL");
++        }
++    }
++
++    private static void getFactoryImageInformation() throws IOException {
++        sPixelLatestHtml = getHtml(sLatestBuildUrl, null);
++        Matcher m = Pattern.compile("href=\"(.*download.*)\"").matcher(sPixelLatestHtml);
++        String factoryImageUrl = m.find() ? m.group(1) : null;
++        if (factoryImageUrl == null || factoryImageUrl.isEmpty()) {
++            throw new IOException("Failed to find factory image URL");
++        }
++        sPixelFactoryImageHtml = getHtml(ANDROID_DEV_URL + factoryImageUrl, null);
++    }
++
++    private static void parsePixelFiDevices() {
++        Map<String, String> devices = new LinkedHashMap<>();
++        Matcher m = Regex.DEVICE_ROW.matcher(sPixelFactoryImageHtml);
++        while (m.find()) {
++            String product = Objects.requireNonNull(m.group(1)).trim() + "_beta";
++            String name = Objects.requireNonNull(m.group(2)).trim();
++            devices.put(name, product);
++        }
++        sBetaDevices = devices;
++    }
++
++    private static void getBuildInfo(String deviceName, Map<String, String> out) throws Exception {
++        sPixelFlashHtml = getHtml(ANDROID_FLASH_URL, null);
++        String product = sBetaDevices.get(deviceName);
++        if (product == null) throw new IllegalStateException("Unknown device: " + deviceName);
++        String device = product.replace("_beta", "");
++
++        Matcher m = Regex.DATA_CLIENT_CONFIG_PATTERN.matcher(sPixelFlashHtml);
++        if (!m.find()) {
++            Matcher mKey = Pattern.compile("AIza[0-9A-Za-z_-]{35}").matcher(sPixelFlashHtml);
++            if (!mKey.find()) {
++                throw new IllegalStateException("Failed to extract flash key");
++            }
++            sFlashKey = mKey.group();
++        } else {
++            sFlashKey = unescapeHtml(m.group(1));
++        }
++
++        Map<String, String> headers = new LinkedHashMap<>();
++        headers.put("Referer", ANDROID_FLASH_URL);
++
++        String stationJson = getHtml(
++                PIXEL_STATION_URL + "?product=" + product + "&key=" + sFlashKey,
++                headers
++        );
++
++        String buildId = null;
++        String buildIncremental = null;
++        Matcher rc = Regex.RC_NAME.matcher(stationJson);
++        Matcher bi = Regex.BUILD_ID.matcher(stationJson);
++        while (rc.find() && bi.find()) {
++            buildId = rc.group(1);
++            buildIncremental = bi.group(1);
++        }
++        if (buildId == null || buildIncremental == null) {
++            throw new IllegalStateException("Failed to parse build info");
++        }
++
++        String securityPatch = null;
++        String canaryId = null;
++        try {
++            Matcher canaryMatcher = Regex.IS_CANARY_PATTERN.matcher(stationJson);
++            String lastCanaryObject = null;
++            while (canaryMatcher.find()) {
++                lastCanaryObject = canaryMatcher.group();
++            }
++            if (lastCanaryObject != null) {
++                Matcher idMatcher = Regex.CANARY_ID.matcher(lastCanaryObject);
++                if (idMatcher.find()) {
++                    canaryId = idMatcher.group(1);
++                }
++            }
++            if (canaryId != null && canaryId.length() >= 4) {
++                canaryId = canaryId.substring(0, 4) + "-" + canaryId.substring(4);
++            }
++            if (canaryId != null) {
++                String secHtml = getHtml(PIXEL_SEC_BULLETIN_URL, null);
++                Pattern sp = Pattern.compile(
++                        String.format(Regex.SECURITY_PATCH_TEMPLATE, Pattern.quote(canaryId)),
++                        Pattern.CASE_INSENSITIVE
++                );
++                Matcher sm = sp.matcher(secHtml);
++                securityPatch = sm.find() ? sm.group(1) : null;
++            }
++        } catch (Exception e) {
++            Log.w(TAG, "Could not resolve security patch from bulletin", e);
++        }
++        if (securityPatch == null && canaryId != null) {
++            securityPatch = canaryId + "-05";
++        }
++
++        String buildFingerprint = "google/" + product + "/" + device
++                + ":CANARY/" + buildId + "/" + buildIncremental + ":user/release-keys";
++
++        out.clear();
++        out.put("MANUFACTURER", "Google");
++        out.put("MODEL", deviceName);
++        out.put("FINGERPRINT", buildFingerprint);
++        out.put("BRAND", "google");
++        out.put("PRODUCT", product);
++        out.put("DEVICE", device);
++        out.put("VERSION.RELEASE", "16");
++        out.put("ID", buildId);
++        out.put("VERSION.INCREMENTAL", buildIncremental);
++        out.put("TYPE", "user");
++        out.put("TAGS", "release-keys");
++        if (securityPatch != null) {
++            out.put("VERSION.SECURITY_PATCH", securityPatch);
++        }
++        out.put("VERSION.DEVICE_INITIAL_SDK_INT", "32");
++    }
++
++    private static List<String> getDevices() throws Exception {
++        getLatestCanary();
++        getFactoryImageInformation();
++        parsePixelFiDevices();
++        return new ArrayList<>(sBetaDevices.keySet());
++    }
++
++    private static <T> T randomFromList(List<T> list) {
++        if (list == null || list.isEmpty()) {
++            throw new IllegalArgumentException("List is empty");
++        }
++        int index = ThreadLocalRandom.current().nextInt(list.size());
++        return list.get(index);
++    }
++
++    private static <T> T pickRandomExcluding(List<T> list, T exclude) {
++        if (list == null || list.size() < 2) return null;
++        T chosen;
++        do {
++            chosen = list.get(ThreadLocalRandom.current().nextInt(list.size()));
++        } while (Objects.equals(chosen, exclude));
++        return chosen;
++    }
++
++    public static Map<String, String> getRandomFingerprint(String exclude) throws Exception {
++        List<String> devices = getDevices();
++        String selected = pickRandomExcluding(devices, exclude);
++        if (selected == null) {
++            selected = randomFromList(devices);
++        }
++        Map<String, String> buildMeta = new LinkedHashMap<>();
++        getBuildInfo(selected, buildMeta);
++        return buildMeta;
++    }
++
++    public static Map<String, String> getRandomFingerprint() throws Exception {
++        List<String> devices = getDevices();
++        Map<String, String> buildMeta = new LinkedHashMap<>();
++        getBuildInfo(randomFromList(devices), buildMeta);
++        return buildMeta;
++    }
++}
+-- 
+2.55.0
+

@@ -1,4 +1,4 @@
-From a8f982ee086f2cc6e4e418bef8b1e9f4dd420e62 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: rmp22 <195054967+rmp22@users.noreply.github.com>
 Date: Wed, 6 May 2026 10:23:08 +0800
 Subject: [PATCH] services: Fixing high-res wallpaper performance issue
@@ -22,10 +22,10 @@ Signed-off-by: Pranav Vashi <neobuddy89@gmail.com>
  2 files changed, 36 insertions(+), 6 deletions(-)
 
 diff --git a/services/core/java/com/android/server/wallpaper/WallpaperCropper.java b/services/core/java/com/android/server/wallpaper/WallpaperCropper.java
-index 77b814b2bcddf..7e94614058ef4 100644
+index 77b814b2..7e946140 100644
 --- a/services/core/java/com/android/server/wallpaper/WallpaperCropper.java
 +++ b/services/core/java/com/android/server/wallpaper/WallpaperCropper.java
-@@ -31,6 +31,7 @@
+@@ -31,6 +31,7 @@ import static com.android.server.wallpaper.WallpaperUtils.getWallpaperDir;
  import android.annotation.NonNull;
  import android.app.WallpaperManager;
  import android.content.Context;
@@ -33,7 +33,7 @@ index 77b814b2bcddf..7e94614058ef4 100644
  import android.graphics.Bitmap;
  import android.graphics.BitmapFactory;
  import android.graphics.ImageDecoder;
-@@ -44,6 +45,7 @@
+@@ -44,6 +45,7 @@ import android.util.SparseArray;
  import android.view.DisplayInfo;
  import android.view.View;
  
@@ -55,7 +55,7 @@ index 77b814b2bcddf..7e94614058ef4 100644
      }
  
      /**
-@@ -667,15 +672,17 @@ private void generateCropInternal(WallpaperData wallpaper) {
+@@ -667,15 +672,17 @@ public class WallpaperCropper {
                          (float) crop.height() / displayForThisOrientation.y));
                  sampleSize = Math.min(sampleSize, sampleSizeForThisOrientation);
              }
@@ -77,7 +77,7 @@ index 77b814b2bcddf..7e94614058ef4 100644
              needScale = sampleSize > 1f;
  
              if (DEBUG_CROP) {
-@@ -810,6 +817,29 @@ private void generateCropInternal(WallpaperData wallpaper) {
+@@ -810,6 +817,29 @@ public class WallpaperCropper {
          }
      }
  
@@ -108,10 +108,10 @@ index 77b814b2bcddf..7e94614058ef4 100644
              Point displaySize,
              WallpaperDefaultDisplayInfo defaultDisplayInfo,
 diff --git a/services/core/java/com/android/server/wallpaper/WallpaperManagerService.java b/services/core/java/com/android/server/wallpaper/WallpaperManagerService.java
-index 27e26df37f17f..f1a4290fb4136 100644
+index 27e26df3..f1a4290f 100644
 --- a/services/core/java/com/android/server/wallpaper/WallpaperManagerService.java
 +++ b/services/core/java/com/android/server/wallpaper/WallpaperManagerService.java
-@@ -1522,7 +1522,7 @@ public WallpaperManagerService(Context context) {
+@@ -1522,7 +1522,7 @@ public class WallpaperManagerService extends IWallpaperManager.Stub
          WindowManager windowManager = mContext.getSystemService(WindowManager.class);
          mWallpaperDisplayHelper = new WallpaperDisplayHelper(
                  displayManager, windowManager, mWindowManagerInternal, mContext.getResources());
@@ -120,3 +120,6 @@ index 27e26df37f17f..f1a4290fb4136 100644
          mActivityManager = mContext.getSystemService(ActivityManager.class);
  
          if (mContext.getResources().getBoolean(
+-- 
+2.55.0
+

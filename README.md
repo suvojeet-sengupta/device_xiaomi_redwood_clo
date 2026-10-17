@@ -82,6 +82,8 @@ repo sync --current-branch --no-tags -j4
 
 The tree carries the source patches redwood needs in `patches/`:
 `common/` for both ROMs, `aospa/` and `penguinos/` for one ROM only.
+Features live in `features/<name>/`, split the same way into `common/`,
+`aospa/` and `penguinos/`, and are applied after the fixes, in name order.
 `vendorsetup.sh` applies them automatically when you run
 `build/envsetup.sh` or `rom-build.sh`, so there's nothing to apply by hand,
 and they survive a `repo sync`.

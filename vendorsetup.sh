@@ -6,7 +6,9 @@
 
 # Apply the source patches redwood needs. Patches in patches/common/ apply
 # to both ROMs, the ones in patches/aospa/ and patches/penguinos/ only to
-# that ROM. Patches that are already applied are skipped, so this is safe
+# that ROM. Features live in patches/features/<name>/, split the same way
+# into common/, aospa/ and penguinos/, and are applied after the fixes, in
+# name order. Patches that are already applied are skipped, so this is safe
 # to run on every envsetup. The ROM is found from the repo manifest; set
 # REDWOOD_ROM=aospa or REDWOOD_ROM=penguinos to pick it by hand.
 
@@ -37,7 +39,10 @@ redwood_apply_patches() {
     esac
     echo "redwood: applying the common and $rom patches" >&2
 
-    for patches in "$device/patches/common" "$device/patches/$rom"; do
+    for patches in "$device/patches/common" "$device/patches/$rom" \
+            $(for feature in "$device"/patches/features/*/; do
+                echo "${feature}common" "${feature}$rom"
+            done); do
         [ -d "$patches" ] || continue
 
         for patch in $(cd "$patches" && find . -name '*.patch' | sort); do
@@ -57,10 +62,10 @@ redwood_apply_patches() {
 
             if git -C "$dir" -c user.name=suvojeet-sengupta -c user.email=suvojitsengupta21@gmail.com \
                     am -q --3way "$patches/$patch" &>/dev/null; then
-                echo "redwood: applied $patch" >&2
+                echo "redwood: applied ${patches#"$device/patches/"}/$patch" >&2
             else
                 git -C "$dir" am --abort &>/dev/null
-                echo "redwood: failed to apply $patch" >&2
+                echo "redwood: failed to apply ${patches#"$device/patches/"}/$patch" >&2
             fi
         done
     done
