@@ -12,9 +12,4 @@
     <!-- Radius of the software rounded corners at the bottom of the display in its natural
         orientation. If zero, the value of rounded_corner_radius is used. -->
     <dimen name="rounded_corner_radius_bottom">70px</dimen>
-
-    <!-- The yupik DPU has one scaling pipe and can't downscale a wallpaper kept at twice
-         the display's size within its per-pipe bandwidth, so every frame that shows the
-         wallpaper falls back to GPU composition. -->
-    <item name="config_wallpaperMaxDisplayDownscale" format="float" type="dimen">1.5</item>
 </resources>
