@@ -29,8 +29,8 @@ This tree builds Paranoid Android `calcite` (Android 17) and PenguinOS
 
 ## What's in the tree
 
-- Kernel: prebuilt Vajra 3.1 (5.4.302) by genie1997, with KernelSU-Next
-  and SuSFS, from `device/xiaomi/redwood-kernel`
+- Kernel: prebuilt Turbo (5.4.302), with KernelSU, from
+  `device/xiaomi/redwood-kernel`
 - Vendor: extracted from stock HyperOS, in `vendor/xiaomi/redwood`
 - Camera: Leica mod MIUI Camera, from `vendor/xiaomi/redwood-miuicamera` (`leica` branch)
 - Audio: Dolby Atmos, from `hardware/dolby`
