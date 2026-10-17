@@ -32,7 +32,7 @@ This tree builds Paranoid Android `calcite` (Android 17) and PenguinOS
 - Kernel: prebuilt Vajra 3.1 (5.4.302) by genie1997, with KernelSU-Next
   and SuSFS, from `device/xiaomi/redwood-kernel`
 - Vendor: extracted from stock HyperOS, in `vendor/xiaomi/redwood`
-- Camera: MIUI Camera, from `vendor/xiaomi/redwood-miuicamera`
+- Camera: Leica mod MIUI Camera, from `vendor/xiaomi/redwood-miuicamera` (`leica` branch)
 - Audio: Dolby Atmos, from `hardware/dolby`
 - Face unlock: ParanoidSense
 - Xiaomi parts: charging control and other device settings
@@ -67,7 +67,7 @@ Add this to `.repo/local_manifests/redwood.xml`:
   <project path="device/xiaomi/redwood" name="suvojeet-sengupta/device_xiaomi_redwood_clo" remote="github" revision="clo" />
   <project path="device/xiaomi/redwood-kernel" name="suvojeet-sengupta/device_xiaomi_redwood-kernel" remote="github" revision="clo" clone-depth="1" />
   <project path="vendor/xiaomi/redwood" name="suvojeet-sengupta/vendor_xiaomi_redwood" remote="github" revision="clo" clone-depth="1" />
-  <project path="vendor/xiaomi/redwood-miuicamera" name="suvojeet-sengupta/android_vendor_xiaomi_redwood-miuicamera" remote="github" revision="miui-seventeen" clone-depth="1" />
+  <project path="vendor/xiaomi/redwood-miuicamera" name="suvojeet-sengupta/android_vendor_xiaomi_redwood-miuicamera" remote="github" revision="leica" clone-depth="1" />
   <project path="packages/apps/ParanoidSense" name="AOSPA/android_packages_apps_ParanoidSense" remote="aospa" revision="calcite" />
   <project path="hardware/xiaomi" name="AOSPA/android_hardware_xiaomi" remote="aospa" revision="calcite" />
   <project path="hardware/dolby" name="suvojeet-sengupta/hardware_dolby" remote="github" revision="moto/dolby-dolbyvision" clone-depth="1" />
