@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: suvojeet-sengupta <suvojitsengupta21@gmail.com>
+Date: Tue, 20 Oct 2026 01:02:31 +0530
+Subject: [PATCH] sepolicy: Let Settings and system_server use the PIHooks
+ disable props
+
+The Play Integrity Fix switch in Settings writes
+persist.sys.pihooks.disable.gms_props, but only shell may set
+pih_disable_prop. Settings runs as system_app, so the set is denied,
+SystemProperties.set() throws and Settings crashes as soon as the
+switch is turned on.
+
+system_server isn't an appdomain either, so PIHooks there can't read
+the props at all: every app launch logs an avc denial and "Access
+denied finding property" and it always sees them as unset.
+---
+ sepolicy/private/pihooks.te | 5 +++++
+ 1 file changed, 5 insertions(+)
+ create mode 100644 sepolicy/private/pihooks.te
+
+diff --git a/sepolicy/private/pihooks.te b/sepolicy/private/pihooks.te
+new file mode 100644
+index 0000000..636194f
+--- /dev/null
++++ b/sepolicy/private/pihooks.te
+@@ -0,0 +1,5 @@
++# The Play Integrity Fix switch in Settings sets persist.sys.pihooks.disable.*
++set_prop(system_app, pih_disable_prop)
++
++# PIHooks also runs in system_server and reads them there
++get_prop(system_server, pih_disable_prop)
+-- 
+2.55.0
+
