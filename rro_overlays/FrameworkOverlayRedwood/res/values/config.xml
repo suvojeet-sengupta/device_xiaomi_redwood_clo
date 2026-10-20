@@ -554,6 +554,10 @@
     <!-- Don't keep the 80 MB MIUI Camera locked in RAM; AOSPA turns this on -->
     <bool name="config_pinnerCameraApp">false</bool>
 
+    <!-- Smart 5G on by default: drop to LTE on Wi-Fi, in battery saver and on the
+         SIM that isn't used for data. NR SA standby on the second SIM costs a lot. -->
+    <bool name="config_smart5gDefault">true</bool>
+
     <!-- Enable doze mode
          ComponentName of a dream to show whenever the system would otherwise have gone to sleep. -->
     <string translatable="false" name="config_dozeComponent">com.android.systemui/com.android.systemui.doze.DozeService</string>
