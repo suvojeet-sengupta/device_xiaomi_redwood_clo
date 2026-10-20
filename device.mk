@@ -20,6 +20,9 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/emulated_storage.mk)
 # Inherit proprietary targets
 $(call inherit-product, vendor/xiaomi/redwood/redwood-vendor.mk)
 
+# Adreno: AOSPA's V@0530.55 with the 64-bit V@0863.1 GLES, Vulkan and OpenCL
+$(call inherit-product, vendor/xiaomi/redwood/adreno/adreno-vendor.mk)
+
 # Basic Call Recorder
 $(call inherit-product-if-exists, vendor/bcr/bcr.mk)
 
@@ -233,7 +236,8 @@ PRODUCT_COPY_FILES += \
 # Graphics
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.software.opengles.deqp.level-2020-03-01.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.opengles.deqp.level.xml \
-    frameworks/native/data/etc/android.software.vulkan.deqp.level-2020-03-01.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.vulkan.deqp.level.xml
+    frameworks/native/data/etc/android.software.vulkan.deqp.level-2020-03-01.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.vulkan.deqp.level.xml \
+    frameworks/native/data/etc/android.hardware.vulkan.version-1_3.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.vulkan.version-1_3.xml
 
 # Health
 PRODUCT_PACKAGES += \
@@ -392,6 +396,10 @@ PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
     debug.hwui.use_hint_manager=true
 
 # QTI Components
+# The adreno component would install AOSPA's V@0530 blobs for 5.4 (dir r); point it at
+# a dir that doesn't exist so it only sets the props and permissions, and the blobs
+# come from vendor/xiaomi/redwood/adreno instead.
+TARGET_ADRENO_DIR := redwood
 TARGET_COMMON_QTI_COMPONENTS := \
     adreno \
     alarm \
