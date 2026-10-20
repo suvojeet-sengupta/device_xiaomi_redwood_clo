@@ -51,7 +51,9 @@ function configure_zram_parameters() {
 		let zRamSizeMB=4096
 	fi
 
-	echo lz4kd > /sys/block/zram0/comp_algorithm
+	# lz4kd isn't in this kernel, so this used to leave lz4. zstd packs
+	# about a fifth more into the same RAM.
+	echo zstd > /sys/block/zram0/comp_algorithm
 
 	if [ -f /sys/block/zram0/disksize ]; then
 		if [ -f /sys/block/zram0/use_dedup ]; then
