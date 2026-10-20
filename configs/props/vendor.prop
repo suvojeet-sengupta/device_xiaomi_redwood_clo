@@ -138,7 +138,6 @@ vendor.gatekeeper.disable_spu=true
 
 # Graphics
 debug.sf.disable_client_composition_cache=1
-debug.sf.enable_advanced_sf_phase_offset=1
 debug.sf.high_fps_early_phase_offset_ns=-4000000
 debug.sf.high_fps_late_app_phase_offset_ns=1000000
 debug.sf.defer_refresh_rate_when_off=1
