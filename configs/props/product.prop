@@ -12,7 +12,14 @@ persist.sys.disable_rescue=true
 persist.sys.fuse.passthrough.enable=true
 
 # LMK tuning
-ro.lmk.swap_free_low_percentage=100
+# lmkd counts free swap as at most (free + inactive file) x this ratio. At the
+# default 1 it saw "swap is low" with 2.6 GB of zram free and killed apps;
+# zram here compresses about 3x. (swap_free_low_percentage is overridden by
+# the vendor perfconfigstore, so it isn't set here.)
+ro.lmk.swap_compression_ratio=3
+# Only the oldest cached apps get killed just for free memory being under the
+# high watermark, not the ones used a moment ago
+ro.lmk.lowmem_min_oom_score=951
 
 # Maintainer
 ro.aospa.maintainer=Suvojeet Sengupta
