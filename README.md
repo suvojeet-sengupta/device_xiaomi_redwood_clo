@@ -39,6 +39,10 @@ This tree builds Paranoid Android `calcite` (Android 17) and PenguinOS
 - Play Integrity: basic integrity out of the box, device and strong integrity
   with Play Integrity Fix and Tricky Store
 - Gestures: double tap to wake, three finger swipe to screenshot
+- Power menu: restart to recovery or the bootloader, switched on in
+  System > Gestures > Power menu
+- App Lock, and a heads-up notifications switch in Notifications
+- Display: 120 Hz forced by default, adaptive refresh can be turned back on
 
 ## Getting the sources
 
