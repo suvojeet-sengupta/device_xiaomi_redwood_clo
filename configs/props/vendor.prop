@@ -150,7 +150,11 @@ ro.hardware.egl=adreno
 ro.hardware.vulkan=adreno
 ro.launcher.blur.appLaunch=0
 ro.opengles.version=196610
-debug.renderengine.backend=skiaglthreaded
+# Render on Vulkan with the Adreno V@0863.1 driver: the UI (HWUI) and
+# SurfaceFlinger's RenderEngine. With blur on and the early-GL offset, the app
+# drawer missed 29-45 of ~570 frames on Vulkan against ~200 on GL
+debug.hwui.renderer=skiavk
+debug.renderengine.backend=skiavkthreaded
 ro.surface_flinger.enable_frame_rate_override=false
 ro.surface_flinger.force_hwc_copy_for_virtual_displays=true
 ro.surface_flinger.has_HDR_display=true
