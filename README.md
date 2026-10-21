@@ -44,71 +44,29 @@ This tree builds Paranoid Android `calcite` (Android 17) and PenguinOS
 - App Lock, and a heads-up notifications switch in Notifications
 - Display: 120 Hz forced by default, adaptive refresh can be turned back on
 
-## Getting the sources
-
-Add this to `.repo/local_manifests/redwood.xml`:
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<manifest>
-  <remote name="penguin" fetch="https://github.com/" />
-
-  <!-- lahaina platform -->
-  <project path="vendor/qcom/opensource/audio-hal/primary-hal" name="AOSPA/android_hardware_qcom_audio" remote="aospa" revision="calcite-888" />
-  <project path="hardware/qcom/display" name="AOSPA/android_hardware_qcom_display" remote="aospa" revision="calcite-888" />
-  <project path="hardware/qcom/gps" name="AOSPA/android_hardware_qcom_gps" remote="aospa" revision="calcite-legacy-component" />
-  <project path="hardware/qcom/media" name="AOSPA/android_hardware_qcom_media" remote="aospa" revision="calcite-888" />
-  <remove-project name="AOSPA/android_hardware_qcom_thermal" />
-  <project path="vendor/qcom/opensource/thermal-hal" name="AOSPA/android_hardware_qcom_thermal" remote="aospa" revision="calcite-legacy" />
-
-  <!-- qcom common -->
-  <remove-project name="AOSPA/android_device_qcom_common" />
-  <project path="device/qcom/common" name="Project-PenguinOS/device_qcom_common" remote="penguin" revision="celerity">
-    <linkfile dest="vendor/qcom/build/tasks/generate_extra_images.mk" src="generate_extra_images.mk"/>
-  </project>
-
-  <!-- redwood -->
-  <project path="device/xiaomi/redwood" name="suvojeet-sengupta/device_xiaomi_redwood_clo" remote="github" revision="clo" />
-  <project path="device/xiaomi/redwood-kernel" name="suvojeet-sengupta/device_xiaomi_redwood-kernel" remote="github" revision="clo" clone-depth="1" />
-  <project path="vendor/xiaomi/redwood" name="suvojeet-sengupta/vendor_xiaomi_redwood" remote="github" revision="clo" clone-depth="1" />
-  <project path="vendor/xiaomi/redwood-miuicamera" name="suvojeet-sengupta/android_vendor_xiaomi_redwood-miuicamera" remote="github" revision="leica" clone-depth="1" />
-  <project path="packages/apps/ParanoidSense" name="AOSPA/android_packages_apps_ParanoidSense" remote="aospa" revision="calcite" />
-  <project path="hardware/xiaomi" name="AOSPA/android_hardware_xiaomi" remote="aospa" revision="calcite" />
-  <project path="hardware/dolby" name="suvojeet-sengupta/hardware_dolby" remote="github" revision="moto/dolby-dolbyvision" clone-depth="1" />
-</manifest>
-```
-
-Then sync:
-
-```bash
-repo sync --current-branch --no-tags -j4
-```
-
-The tree carries the source patches redwood needs in `patches/`:
-`common/` for both ROMs, `aospa/` and `penguinos/` for one ROM only.
-Features live in `features/<name>/`, split the same way into `common/`,
-`aospa/` and `penguinos/`, and are applied after the fixes, in name order.
-`vendorsetup.sh` applies them automatically when you run
-`build/envsetup.sh` or `rom-build.sh`, so there's nothing to apply by hand,
-and they survive a `repo sync`.
-The ROM is found from the repo manifest; set `REDWOOD_ROM=aospa` or
-`REDWOOD_ROM=penguinos` before `. build/envsetup.sh` to pick it by hand.
-
 ## Building
 
+You need a synced Paranoid Android `calcite` tree. The setup and build
+scripts are in the
+[`clo-setup`](https://github.com/suvojeet-sengupta/device_xiaomi_redwood_clo/tree/clo-setup)
+branch. Run these from the root of the tree:
+
 ```bash
-./rom-build.sh redwood
+git clone -b clo-setup https://github.com/suvojeet-sengupta/device_xiaomi_redwood_clo.git ~/redwood-setup
+~/redwood-setup/setup.sh
+~/redwood-setup/build.sh
 ```
 
-For a release signed build, pass the folder with your signing keys:
+`setup.sh` adds the redwood local manifest, syncs the redwood repos and makes
+signing keys in `~/keys` if there are none yet. `build.sh` builds a signed
+ROM; the flashable zip ends up in the tree root, and boot, vendor_boot and
+dtbo in `images/`.
 
-```bash
-./rom-build.sh redwood -t user -s ~/.android-certs
-```
+Keep a copy of your keys off the build machine: a build signed with other
+keys can't be flashed over yours without wiping data.
 
-Moving between test keys and release keys needs a data wipe. Keep a backup of
-your keys off the build server, since a build signed with different keys can't
-be flashed over yours.
+The source patches redwood needs are in `patches/` and are applied by
+`vendorsetup.sh` when you build, so there's nothing to apply by hand.
 
 ## Updating vendor blobs
 
