@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: suvojeet-sengupta <suvojitsengupta21@gmail.com>
+Date: Wed, 21 Oct 2026 20:37:31 +0530
+Subject: [PATCH] hwui: Keep bigger Vulkan pipeline caches and stop resaving
+ ones that don't fit
+
+With skiavk the whole VkPipelineCache is stored as a single value, and on
+Adreno it outgrows the 2MB value limit in apps with many pipelines. The
+store is then refused, but mTryToStorePipelineCache stays set, so every
+flushed frame serializes the full cache again only to have it thrown
+away: hundreds of "sizes 4 2103842 not allowed" in a few seconds and a
+busy RenderThread, and the pipelines are compiled again on every launch.
+
+Allow 4MB values in an 8MB cache, and when a pipeline cache store is
+refused, stop trying until new shaders are compiled.
+---
+ libs/hwui/pipeline/skia/ShaderCache.cpp | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/libs/hwui/pipeline/skia/ShaderCache.cpp b/libs/hwui/pipeline/skia/ShaderCache.cpp
+index 22f59a6..0d14868 100644
+--- a/libs/hwui/pipeline/skia/ShaderCache.cpp
++++ b/libs/hwui/pipeline/skia/ShaderCache.cpp
+@@ -36,8 +36,8 @@ namespace skiapipeline {
+ 
+ // Cache size limits.
+ static const size_t maxKeySize = 1024;
+-static const size_t maxValueSize = 2 * 1024 * 1024;
+-static const size_t maxTotalSize = 4 * 1024 * 1024;
++static const size_t maxValueSize = 4 * 1024 * 1024;
++static const size_t maxTotalSize = 8 * 1024 * 1024;
+ static_assert(maxKeySize + maxValueSize < maxTotalSize);
+ 
+ ShaderCache::ShaderCache() {
+@@ -201,6 +201,9 @@ void ShaderCache::store(const SkData& key, const SkData& data, const SkString& /
+     size_t keySize = key.size();
+     if (keySize == 0 || valueSize == 0 || valueSize >= maxValueSize) {
+         ALOGW("ShaderCache::store: sizes %d %d not allowed", (int)keySize, (int)valueSize);
++        if (mInStoreVkPipelineInProgress) {
++            mTryToStorePipelineCache = false;
++        }
+         return;
+     }
+ 
+-- 
+2.55.0
+
