@@ -1,4 +1,4 @@
-From 0b5e75c37625a4c8f0dd70386e523ecf386e57a3 Mon Sep 17 00:00:00 2001
+From b2e41e783f9d88cb8fc0977f30ef47e7bf827215 Mon Sep 17 00:00:00 2001
 From: suvojeet-sengupta <suvojitsengupta21@gmail.com>
 Date: Thu, 22 Oct 2026 21:31:35 +0530
 Subject: [PATCH] libion: Fall back to DMA-BUF heaps without /dev/ion
@@ -10,11 +10,11 @@ heap directory instead, serve ion_alloc_fd from the qcom heap the msm
 heap mask and flags stand for, report the msm heaps to heap queries and
 treat syncs as done. Kernels with ION are unaffected.
 ---
- ion_legacy.c | 111 ++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 110 insertions(+), 1 deletion(-)
+ ion_legacy.c | 113 ++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 112 insertions(+), 1 deletion(-)
 
 diff --git a/ion_legacy.c b/ion_legacy.c
-index 5ae34ad..328aa20 100644
+index 5ae34ad..2a1366b 100644
 --- a/ion_legacy.c
 +++ b/ion_legacy.c
 @@ -21,6 +21,7 @@
@@ -25,7 +25,7 @@ index 5ae34ad..328aa20 100644
  #include <linux/ion.h>
  #include <stdatomic.h>
  #include <stdio.h>
-@@ -41,7 +42,78 @@ enum ion_version { ION_VERSION_UNKNOWN, ION_VERSION_MODERN, ION_VERSION_LEGACY }
+@@ -41,7 +42,79 @@ enum ion_version { ION_VERSION_UNKNOWN, ION_VERSION_MODERN, ION_VERSION_LEGACY }
  
  static atomic_int g_ion_version = ION_VERSION_UNKNOWN;
  
@@ -76,6 +76,7 @@ index 5ae34ad..328aa20 100644
 +        if (flags & MSM_FLAG_CP_CDSP) return "qcom,secure-cdsp";
 +        return "qcom,secure-non-pixel";
 +    }
++    if (heap_mask & MSM_HEAP(4)) return "qcom,adsp";
 +    if (heap_mask & MSM_HEAP(3)) return "qcom,display";
 +    if (heap_mask & MSM_HEAP(5)) return "qcom,audio-ml";
 +    if (heap_mask & MSM_HEAP(6)) return "qcom,user-contig";
@@ -104,7 +105,7 @@ index 5ae34ad..328aa20 100644
      int version = atomic_load_explicit(&g_ion_version, memory_order_acquire);
      if (version == ION_VERSION_UNKNOWN) {
          /**
-@@ -56,7 +128,14 @@ int ion_is_legacy(int fd) {
+@@ -56,7 +129,14 @@ int ion_is_legacy(int fd) {
  }
  
  int ion_open() {
@@ -120,7 +121,7 @@ index 5ae34ad..328aa20 100644
      if (fd < 0) ALOGE("open /dev/ion failed: %s", strerror(errno));
  
      return fd;
-@@ -88,6 +167,7 @@ int ion_is_using_modular_heaps(int fd) {
+@@ -88,6 +168,7 @@ int ion_is_using_modular_heaps(int fd) {
      int ion_abi_version = 0;
      int ret = 0;
  
@@ -128,7 +129,7 @@ index 5ae34ad..328aa20 100644
      ret = ion_ioctl(fd, ION_IOC_ABI_VERSION, &ion_abi_version);
      return (ret == 0 && ion_abi_version >= ION_ABI_VERSION_MODULAR_HEAPS);
  }
-@@ -171,6 +251,18 @@ int ion_alloc_fd(int fd, size_t len, size_t align, unsigned int heap_mask, unsig
+@@ -171,6 +252,19 @@ int ion_alloc_fd(int fd, size_t len, size_t align, unsigned int heap_mask, unsig
  
      if (!handle_fd) return -EINVAL;
  
@@ -136,9 +137,10 @@ index 5ae34ad..328aa20 100644
 +        const char* name = dma_heap_for(heap_mask, flags);
 +
 +        ret = dma_heap_alloc(name, len, handle_fd);
-+        if (ret == -ENOENT && strcmp(name, "qcom,system"))
++        /* not every client may open every heap, so fall back to the system one */
++        if (ret && strcmp(name, "qcom,system"))
 +            ret = dma_heap_alloc("qcom,system", len, handle_fd);
-+        if (ret == -ENOENT) ret = dma_heap_alloc("system", len, handle_fd);
++        if (ret) ret = dma_heap_alloc("system", len, handle_fd);
 +        if (ret)
 +            ALOGE("alloc of %zu bytes, heap mask 0x%x, flags 0x%x from %s failed: %s", len,
 +                  heap_mask, flags, name, strerror(-ret));
@@ -147,7 +149,7 @@ index 5ae34ad..328aa20 100644
      if (!ion_is_legacy(fd)) {
          struct ion_new_allocation_data data = {
              .len = len,
-@@ -211,6 +303,7 @@ int ion_sync_fd(int fd, int handle_fd) {
+@@ -211,6 +305,7 @@ int ion_sync_fd(int fd, int handle_fd) {
          .fd = handle_fd,
      };
  
@@ -155,7 +157,7 @@ index 5ae34ad..328aa20 100644
      if (!ion_is_legacy(fd)) return -EINVAL;
  
      return ion_ioctl(fd, ION_IOC_SYNC, &data);
-@@ -221,6 +314,10 @@ int ion_query_heap_cnt(int fd, int* cnt) {
+@@ -221,6 +316,10 @@ int ion_query_heap_cnt(int fd, int* cnt) {
      struct ion_heap_query query;
  
      if (!cnt) return -EINVAL;
@@ -166,7 +168,7 @@ index 5ae34ad..328aa20 100644
      memset(&query, 0, sizeof(query));
  
      ret = ion_ioctl(fd, ION_IOC_HEAP_QUERY, &query);
-@@ -236,6 +333,18 @@ int ion_query_get_heaps(int fd, int cnt, void* buffers) {
+@@ -236,6 +335,18 @@ int ion_query_get_heaps(int fd, int cnt, void* buffers) {
          .cnt = cnt, .heaps = (uintptr_t)buffers,
      };
  
