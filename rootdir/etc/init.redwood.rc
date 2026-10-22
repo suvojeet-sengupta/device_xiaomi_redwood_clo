@@ -24,6 +24,13 @@ on property:ro.boot.product.hardware.sku=redwood
     enable qti_esepowermanager_service_1_1
     enable secureelement-hal_1_2
 
+# init.qti.media.sh picks the v1 media profiles from the SKU the video
+# driver reports and falls back to v0, which redwood doesn't ship, so
+# zygote aborts in MediaProfiles if the driver isn't up yet, as on 6.12.
+# Every redwood is a yupik v1.
+on property:vendor.media.target_variant=_yupik_v0
+    setprop vendor.media.target_variant _yupik_v1
+
 # loc_sys_service only talks to the AIDL location HAL, which this vendor
 # doesn't have, and would wait for it forever. It starts on early-boot;
 # vendor init can't trigger on its init.svc property.
