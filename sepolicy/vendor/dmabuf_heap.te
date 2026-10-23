@@ -1,0 +1,18 @@
+# The 5.4 vendor allocates through libion; on 6.12 there is no /dev/ion and
+# libion opens the qcom DMA-BUF heaps instead.
+allow { vendor_adsprpcd vendor_audioadsprpcd vendor_cdsprpcd vendor_sensors } {
+    vendor_dmabuf_system_heap_device
+    vendor_dmabuf_system_uncached_heap_device
+    vendor_dmabuf_adsp_heap_device
+}:chr_file r_file_perms;
+
+allow hal_graphics_allocator_default {
+    vendor_dmabuf_system_heap_device
+    vendor_dmabuf_system_uncached_heap_device
+}:chr_file r_file_perms;
+
+allow hal_mlipay_default {
+    dmabuf_system_heap_device
+    vendor_dmabuf_system_heap_device
+    vendor_dmabuf_qseecom_ta_heap_device
+}:chr_file r_file_perms;
