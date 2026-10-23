@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: suvojeet-sengupta <suvojitsengupta21@gmail.com>
+Date: Fri, 23 Oct 2026 16:40:09 +0000
+Subject: [PATCH] PIHooks: Only watch for the add account activity in GMS
+
+setPlayIntegrityProps also runs in the Play Store, which asked for the
+focused root task, was refused (only GMS gets MANAGE_ACTIVITY_TASKS
+bypassed) and logged "Unable to get top activity!" with a stack trace on
+every start. Only GMS shows that activity, so only check it and register
+the task stack listener there.
+
+Change-Id: I53db4fb1097f60ae04867958ae3fb7f4cb9fafcf
+---
+ .../com/android/internal/util/PropImitationHooks.java     | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/core/java/com/android/internal/util/PropImitationHooks.java b/core/java/com/android/internal/util/PropImitationHooks.java
+index 4bec2463a2b9..34361bdc4cdb 100644
+--- a/core/java/com/android/internal/util/PropImitationHooks.java
++++ b/core/java/com/android/internal/util/PropImitationHooks.java
+@@ -427,7 +427,9 @@ public class PropImitationHooks {
+             return;
+         }
+ 
+-        final boolean was = isGmsAddAccountActivityOnTop();
++        // Only GMS shows the add account activity, and only GMS is let read the focused
++        // task (shouldBypassTaskPermission); the Play Store was refused on every start.
++        final boolean was = sIsGms && isGmsAddAccountActivityOnTop();
+         final TaskStackListener taskStackListener = new TaskStackListener() {
+             @Override
+             public void onTaskStackChanged() {
+@@ -449,6 +451,10 @@ public class PropImitationHooks {
+             sSpoofPropsForProcess = false;
+         }
+ 
++        if (!sIsGms) {
++            return;
++        }
++
+         try {
+             ActivityTaskManager.getService().registerTaskStackListener(taskStackListener);
+         } catch (Exception e) {
+-- 
+2.43.0
+
