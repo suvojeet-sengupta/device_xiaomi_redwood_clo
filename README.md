@@ -14,13 +14,17 @@ git clone -b clo-setup https://github.com/suvojeet-sengupta/device_xiaomi_redwoo
 ```
 
 - `setup.sh` adds `redwood.xml` to `.repo/local_manifests`, syncs the redwood
-  repos and makes signing keys in `~/keys` if there are none yet.
+  repos and clones the signing keys from GitHub into `~/keys`.
 - `build.sh` builds a signed ROM. The flashable zip ends up in the tree root,
   and boot, vendor_boot and dtbo in `images/`.
 
-Set `KEYS_DIR` to use keys from somewhere else. Keep a copy of your keys off
-the build machine: a build signed with other keys can't be flashed over yours
-without wiping data.
+`setup.sh` never makes keys. A build signed with other keys can't be flashed
+over a phone running yours without wiping data, and its OTAs won't install,
+so every build machine has to sign with the same keys. They come from
+`KEYS_REPO` (default `suvojeet-sengupta/keys`); keep that repo private. To
+clone a private repo, be logged in with `gh` or pass `GH_TOKEN`. If
+`~/keys` (or `KEYS_DIR`) already holds keys that aren't the ones in that
+repo, `setup.sh` stops instead of building with them.
 
 To update, pull this branch and run both scripts again:
 
