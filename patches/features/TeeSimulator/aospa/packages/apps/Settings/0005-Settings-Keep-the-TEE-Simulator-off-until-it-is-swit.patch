@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: suvojeet-sengupta <suvojitsengupta21@gmail.com>
+Date: Fri, 23 Oct 2026 16:10:24 +0000
+Subject: [PATCH] Settings: Keep the TEE Simulator off until it is switched on
+
+Picking target apps writes the keystore config, and with no config yet it
+wrote enabled=1, so the TEE Simulator could turn on while its switch
+still showed off. Start from enabled=0; an existing config keeps its
+value.
+
+Change-Id: I16a548766f1ee724f2ce9492a5ad528a0ab2ab8c
+---
+ .../android/settings/custom/spoofing/TeeSimulatorAppSettings.kt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/com/android/settings/custom/spoofing/TeeSimulatorAppSettings.kt b/src/com/android/settings/custom/spoofing/TeeSimulatorAppSettings.kt
+index f4553067f4a..a23834549fc 100644
+--- a/src/com/android/settings/custom/spoofing/TeeSimulatorAppSettings.kt
++++ b/src/com/android/settings/custom/spoofing/TeeSimulatorAppSettings.kt
+@@ -234,7 +234,7 @@ private fun TeeSimulatorAppSettingsContent(
+         try {
+             val storeDir = File(TeeSimulatorAppSettings.STORE_DIR)
+             val configFile = File(storeDir, TeeSimulatorAppSettings.CONFIG_FILE)
+-            var enabled = "1"
++            var enabled = "0"
+             var mode = "auto"
+             var keyboxPath = File(storeDir, "keybox.xml").absolutePath
+             var showSys = "0"
+-- 
+2.43.0
+

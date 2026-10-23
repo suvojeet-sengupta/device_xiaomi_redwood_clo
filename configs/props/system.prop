@@ -30,6 +30,9 @@ vendor.mm.enable.qcom_parser=16777215
 # NFC
 ro.nfc.port=I2C
 
+# Play Integrity Fix: off until it is switched on in Settings
+persist.sys.pihooks.disable.gms_props=true
+
 # QC framework value-adds
 ro.vendor.qti.va_aosp.support=1
 
