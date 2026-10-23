@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: suvojeet-sengupta <suvojitsengupta21@gmail.com>
+Date: Fri, 23 Oct 2026 16:17:29 +0000
+Subject: [PATCH 2/3] RIL: Send the signal strength reporting criteria one at a
+ time
+
+QTI's radio HAL answers a setSignalStrengthReportingCriteria list with one
+response per entry. RILJ took the first and logged the other eight as
+unexpected responses on every screen on and off, and when the HAL rejected
+one entry (INVALID_ARGUMENTS) nobody saw it. Send one entry per request,
+as the 1.5 HAL took them, with the caller's message on the last one.
+---
+ src/java/com/android/internal/telephony/RIL.java | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/src/java/com/android/internal/telephony/RIL.java b/src/java/com/android/internal/telephony/RIL.java
+index 333e809694..254466cff8 100644
+--- a/src/java/com/android/internal/telephony/RIL.java
++++ b/src/java/com/android/internal/telephony/RIL.java
+@@ -4052,6 +4052,22 @@ public class RIL extends BaseCommands implements CommandsInterface {
+     @Override
+     public void setSignalStrengthReportingCriteria(
+             @NonNull List<SignalThresholdInfo> signalThresholdInfos, @Nullable Message result) {
++        // Send the criteria one at a time, as the 1.5 HAL took them. QTI's radio HAL answers a
++        // list with one response per entry, so all but the first came back as unexpected
++        // responses and an entry it rejected went unnoticed.
++        int count = signalThresholdInfos.size();
++        if (count <= 1) {
++            sendSignalStrengthReportingCriteria(signalThresholdInfos, result);
++            return;
++        }
++        for (int i = 0; i < count; i++) {
++            sendSignalStrengthReportingCriteria(List.of(signalThresholdInfos.get(i)),
++                    i == count - 1 ? result : null);
++        }
++    }
++
++    private void sendSignalStrengthReportingCriteria(
++            @NonNull List<SignalThresholdInfo> signalThresholdInfos, @Nullable Message result) {
+         RadioNetworkProxy networkProxy = getRadioServiceProxy(RadioNetworkProxy.class);
+         if (!canMakeRequest("setSignalStrengthReportingCriteria", networkProxy, result,
+                 RADIO_HAL_VERSION_1_4)) {
+-- 
+2.43.0
+

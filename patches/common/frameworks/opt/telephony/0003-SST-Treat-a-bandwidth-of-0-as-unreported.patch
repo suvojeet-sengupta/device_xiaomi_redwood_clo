@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: suvojeet-sengupta <suvojitsengupta21@gmail.com>
+Date: Fri, 23 Oct 2026 16:17:29 +0000
+Subject: [PATCH 3/3] SST: Treat a bandwidth of 0 as unreported
+
+The modem leaves secondary LTE cells at CELL_BANDWIDTH_UNKNOWN (0) in its
+physical channel configs, and reports 0 in the LTE cell identity, so every
+poll logged "Invalid LTE Bandwidth in RegistrationState, 0" and dropped
+the bandwidths of the cells it did report. Leave the unreported ones out
+and treat 0 like Integer.MAX_VALUE.
+---
+ .../internal/telephony/ServiceStateTracker.java     | 13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/src/java/com/android/internal/telephony/ServiceStateTracker.java b/src/java/com/android/internal/telephony/ServiceStateTracker.java
+index 5c434a3e42..da6eb61b03 100644
+--- a/src/java/com/android/internal/telephony/ServiceStateTracker.java
++++ b/src/java/com/android/internal/telephony/ServiceStateTracker.java
+@@ -1647,9 +1647,12 @@ public class ServiceStateTracker extends Handler {
+     }
+ 
+     private static int[] getBandwidthsFromConfigs(List<PhysicalChannelConfig> list) {
++        // Leave out the cells whose bandwidth the modem didn't report (0, as for some
++        // secondary cells) rather than calling the whole list invalid.
+         return list.stream()
+                 .map(PhysicalChannelConfig::getCellBandwidthDownlinkKhz)
+                 .mapToInt(Integer::intValue)
++                .filter(bw -> bw != 0)
+                 .toArray();
+     }
+ 
+@@ -2079,13 +2082,14 @@ public class ServiceStateTracker extends Handler {
+             // and we transition to camped-for-emergency (since we never have a physical
+             // channel active). In the normal case of single-carrier non-return-to-idle, the
+             // values *must* be the same, so it doesn't matter which is chosen.
+-            if (bandwidths == null || bandwidths.length == 1) {
++            if (bandwidths == null || bandwidths.length <= 1) {
+                 final int cbw = ci.getBandwidth();
+                 if (isValidLteBandwidthKhz(cbw)) {
+                     bandwidths = new int[] {cbw};
+-                } else if (cbw == Integer.MAX_VALUE) {
++                } else if (cbw == Integer.MAX_VALUE || cbw == 0) {
+                     // Bandwidth is unreported; c'est la vie. This is not an error because
+-                    // pre-1.2 HAL implementations do not support bandwidth reporting.
++                    // pre-1.2 HAL implementations do not support bandwidth reporting, and
++                    // some radio HALs report 0 instead.
+                 } else {
+                     loge("Invalid LTE Bandwidth in RegistrationState, " + cbw);
+                 }
+@@ -2110,7 +2114,8 @@ public class ServiceStateTracker extends Handler {
+             if (VDBG) log("Skipping bandwidth update for Non-LTE and Non-NR cell.");
+         }
+ 
+-        if (bandwidths == null && primaryPcc != null && primaryPcc.getCellBandwidthDownlinkKhz()
++        if ((bandwidths == null || bandwidths.length == 0) && primaryPcc != null
++                && primaryPcc.getCellBandwidthDownlinkKhz()
+                 != PhysicalChannelConfig.CELL_BANDWIDTH_UNKNOWN) {
+             bandwidths = new int[] {primaryPcc.getCellBandwidthDownlinkKhz()};
+         } else if (VDBG) {
+-- 
+2.43.0
+
