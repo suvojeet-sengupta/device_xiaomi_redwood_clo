@@ -355,6 +355,10 @@ PRODUCT_VENDOR_PROPERTIES += \
     $(foreach tag,$(SPAMMY_LOG_TAGS),log.tag.$(tag)=W)
 endif
 
+# OTA updates: AOSPA only ships ParanoidHub in STABLE and BETA builds
+PRODUCT_PACKAGES += \
+    ParanoidHub
+
 # Overlays
 PRODUCT_PACKAGES += \
     ApertureOverlayRedwood \
