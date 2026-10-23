@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <manifest>
-  <remote name="penguin" fetch="https://github.com/" />
-
   <!-- lahaina platform -->
   <project path="vendor/qcom/opensource/audio-hal/primary-hal" name="AOSPA/android_hardware_qcom_audio" remote="aospa" revision="calcite-888" />
   <project path="hardware/qcom/display" name="AOSPA/android_hardware_qcom_display" remote="aospa" revision="calcite-888" />
@@ -9,12 +7,6 @@
   <project path="hardware/qcom/media" name="AOSPA/android_hardware_qcom_media" remote="aospa" revision="calcite-888" />
   <remove-project name="AOSPA/android_hardware_qcom_thermal" />
   <project path="vendor/qcom/opensource/thermal-hal" name="AOSPA/android_hardware_qcom_thermal" remote="aospa" revision="calcite-legacy" />
-
-  <!-- qcom common -->
-  <remove-project name="AOSPA/android_device_qcom_common" />
-  <project path="device/qcom/common" name="Project-PenguinOS/device_qcom_common" remote="penguin" revision="celerity">
-    <linkfile dest="vendor/qcom/build/tasks/generate_extra_images.mk" src="generate_extra_images.mk"/>
-  </project>
 
   <!-- redwood -->
   <project path="device/xiaomi/redwood" name="suvojeet-sengupta/device_xiaomi_redwood_clo" remote="github" revision="clo" />
