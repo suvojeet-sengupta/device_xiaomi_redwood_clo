@@ -5,10 +5,10 @@
 # Run it from the root of the AOSPA tree, after setup.sh:
 #   ~/redwood-setup/build.sh
 #
-# The flashable zip ends up in the tree root, and boot, vendor_boot and dtbo
-# for fastboot in images/, and the OTA feed in redwood.json. Set KEYS_DIR to
-# sign with other keys, and OTA_URL when the zip won't be a GitHub release
-# asset of the device tree (see device/xiaomi/redwood/ota/README.md).
+# The flashable zip ends up in the tree root, boot, vendor_boot and dtbo for
+# fastboot in images/, and the OTA feed in device/xiaomi/redwood/ota. Set
+# KEYS_DIR to sign with other keys, and OTA_URL when the zip won't be a
+# GitHub release asset of the device tree (see device/xiaomi/redwood/ota/README.md).
 
 set -euo pipefail
 
