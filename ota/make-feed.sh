@@ -9,9 +9,9 @@
 # Run it from the root of the AOSPA tree right after the build, so the
 # build props in out/ belong to the zip. Without a url the zip is expected
 # as an asset of the redwood-<date> release of the device tree on GitHub.
-# The changelog comes from ota/changelog.txt next to this script, if there
-# is one. The feed is written to <device>.json in the current directory;
-# publish it on the ota branch (see README.md there).
+# The changelog comes from changelog.txt next to this script, if there is
+# one. The feed is written to <device>.json next to this script; commit and
+# push it to publish the build (see README.md).
 
 set -euo pipefail
 
@@ -54,7 +54,7 @@ FEED_URL=$url \
 FEED_VERSION=${major^} \
 FEED_CODE=${minor:-$date} \
 FEED_CHANGELOG=$here/changelog.txt \
-python3 - "$device.json" <<'PY'
+python3 - "$here/$device.json" <<'PY'
 import json, os, sys
 
 e = os.environ
@@ -82,5 +82,5 @@ with open(sys.argv[1], "w") as f:
     f.write("\n")
 PY
 
-echo "Feed:   $(pwd)/$device.json"
+echo "Feed:   $here/$device.json"
 echo "Upload: $name to $url"

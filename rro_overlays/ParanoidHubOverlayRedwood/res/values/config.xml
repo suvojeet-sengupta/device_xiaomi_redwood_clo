@@ -4,7 +4,7 @@
      SPDX-License-Identifier: Apache-2.0
 -->
 <resources>
-    <!-- Unofficial builds: the feed lives on the ota branch of this device tree,
+    <!-- Unofficial builds: the feed is ota/redwood.json in this device tree,
          see ota/README.md. %1$s is ro.aospa.device. -->
-    <string name="config_updateServerUrl" translatable="false">https://raw.githubusercontent.com/suvojeet-sengupta/device_xiaomi_redwood_clo/ota/%1$s.json</string>
+    <string name="config_updateServerUrl" translatable="false">https://raw.githubusercontent.com/suvojeet-sengupta/device_xiaomi_redwood_clo/clo/ota/%1$s.json</string>
 </resources>
