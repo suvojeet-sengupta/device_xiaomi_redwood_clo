@@ -364,6 +364,7 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     FrameworkOverlayRedwood \
     NcmTetheringOverlay \
+    ParanoidHubOverlayRedwood \
     SettingsOverlayRedwood \
     SettingsProviderOverlayRedwoodCN \
     SettingsProviderOverlayRedwoodGL \
