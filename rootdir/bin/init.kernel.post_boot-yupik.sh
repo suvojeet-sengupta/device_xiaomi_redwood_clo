@@ -118,9 +118,11 @@ function configure_memory_parameters() {
 	# file pages from storage
 	echo 100 > /proc/sys/vm/swappiness
 
-        # Disable wsf  beacause we are using efk.
-        # wsf Range : 1..1000. So set to bare minimum value 1.
-        echo 1 > /proc/sys/vm/watermark_scale_factor
+	# extra_free_kbytes raises the low and high watermarks, but only wsf
+	# spaces them out. At 1 kswapd woke at low, freed about 2 MB and went back
+	# to sleep, so bursts hit the min watermark and lmkd killed down to
+	# perceptible apps; 1% of RAM between them gives it room to keep up.
+	echo 100 > /proc/sys/vm/watermark_scale_factor
 
 	MemTotalStr=`cat /proc/meminfo | grep MemTotal`
 	MemTotal=${MemTotalStr:16:8}
