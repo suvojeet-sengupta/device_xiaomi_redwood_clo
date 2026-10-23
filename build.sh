@@ -6,7 +6,9 @@
 #   ~/redwood-setup/build.sh
 #
 # The flashable zip ends up in the tree root, and boot, vendor_boot and dtbo
-# for fastboot in images/. Set KEYS_DIR to sign with other keys.
+# for fastboot in images/, and the OTA feed in redwood.json. Set KEYS_DIR to
+# sign with other keys, and OTA_URL when the zip won't be a GitHub release
+# asset of the device tree (see device/xiaomi/redwood/ota/README.md).
 
 set -euo pipefail
 
@@ -25,6 +27,11 @@ zip=${tf%-signed-target_files.zip}.zip
 
 mkdir -p images
 unzip -o -j -q "$tf" IMAGES/boot.img IMAGES/vendor_boot.img IMAGES/dtbo.img -d images
+
+feed=device/xiaomi/redwood/ota/make-feed.sh
+if [ -x "$feed" ]; then
+	"$feed" "$zip" ${OTA_URL:+"$OTA_URL"} || echo "build: no OTA feed, see above"
+fi
 
 echo
 echo "ROM:    $(pwd)/$zip"
