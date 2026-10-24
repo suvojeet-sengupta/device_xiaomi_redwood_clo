@@ -63,4 +63,9 @@
     <string name="charge_safety_low_level">Battery level is too low (%1$d%%)</string>
     <string name="charge_safety_ok">Safety checks passed</string>
 
+    <!-- DC dimming -->
+    <string name="dc_dimming_title">DC dimming</string>
+    <string name="dc_dimming_summary">Reduce screen flicker at low brightness</string>
+    <string name="dc_dimming_unavailable">DC dimming is not supported by this kernel</string>
+
 </resources>

@@ -27,6 +27,7 @@ import android.hardware.display.DisplayManager;
 import android.util.Log;
 import android.view.Display.HdrCapabilities;
 
+import org.lineageos.settings.dcdimming.DcDimmingUtils;
 import org.lineageos.settings.utils.FileUtils;
 import org.lineageos.settings.thermal.ThermalUtils;
 import org.lineageos.settings.refreshrate.RefreshUtils;
@@ -57,6 +58,7 @@ public class BootCompletedReceiver extends BroadcastReceiver {
         // Data is now accessible (user has just unlocked).
         RefreshUtils.initialize(context);
         ThermalUtils.startService(context);
+        DcDimmingUtils.restore(context);
 
         // Override HDR types to enable Dolby Vision
         final DisplayManager dm = context.getSystemService(DisplayManager.class);
