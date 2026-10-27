@@ -1,0 +1,33 @@
+From edd2b9920947b969be13b491c394444ff4bfb3c1 Mon Sep 17 00:00:00 2001
+From: suvojeet-sengupta <suvojitsengupta21@gmail.com>
+Date: Tue, 27 Oct 2026 13:46:10 +0530
+Subject: [PATCH] perf: lahaina: Keep 32 cached apps on yupik
+
+With 60 cached apps on a 6 GB yupik phone the cached set didn't fit next
+to zram, so idle apps kept swapping each other in and out: about 95
+swap-ins and 95 major faults a second with the screen idle, and lmkd
+killing the oldest ones whenever a new app opened. AOSP's default of 32
+brought that down to about 20 swap-ins and 25 major faults a second.
+---
+ vendor/perf/configs/lahaina/perf/perfconfigstore.xml | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/vendor/perf/configs/lahaina/perf/perfconfigstore.xml b/vendor/perf/configs/lahaina/perf/perfconfigstore.xml
+index 9cd2cbc..a90275d 100644
+--- a/vendor/perf/configs/lahaina/perf/perfconfigstore.xml
++++ b/vendor/perf/configs/lahaina/perf/perfconfigstore.xml
+@@ -80,7 +80,10 @@ ________________________________________________________________________________
+                 <Prop Name="vendor.perf.gestureflingboost.enable" Value="true" />
+                 <Prop Name="ro.vendor.qti.sys.fw.bg_apps_limit" Value="96" />
+                 <Prop Name="ro.vendor.qti.sys.fw.bg_apps_limit" Value="60" Target="shima" />
+-                <Prop Name="ro.vendor.qti.sys.fw.bg_apps_limit" Value="60" Target="yupik" />
++                <!-- redwood: 60 cached apps don't fit in 6 GB with zram, so they
++                     kept swapping each other in and out even with the screen
++                     idle. AOSP's 32 cut swap-ins from about 95/s to 20/s -->
++                <Prop Name="ro.vendor.qti.sys.fw.bg_apps_limit" Value="32" Target="yupik" />
+                 <Prop Name="ro.vendor.qti.sys.fw.bg_apps_limit" Value="60" Target="katmai" />
+                 <Prop Name="ro.vendor.at_library" Value="libqti-at.so" />
+                 <Prop Name="vendor.perf.performancemode.support" Value="true" Target="lahaina" />
+-- 
+2.55.0
+
