@@ -24,4 +24,8 @@
     <!-- Location on the screen of the center of the physical power button. This is a reasonable
     default that should be overridden by device-specific overlays. -->
     <dimen name="physical_power_button_center_screen_location_y">1030px</dimen>
+
+    <!-- The PiP shadow forces SurfaceFlinger to GPU-compose the PiP task, which drags
+         protected (DRM) video into protected-context GPU composition on every frame. -->
+    <dimen name="pip_shadow_radius">0dp</dimen>
 </resources>
