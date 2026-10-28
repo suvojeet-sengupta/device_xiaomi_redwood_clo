@@ -11,6 +11,8 @@
   <!-- redwood -->
   <project path="device/xiaomi/redwood" name="suvojeet-sengupta/device_xiaomi_redwood_clo" remote="github" revision="clo" />
   <project path="device/xiaomi/redwood-kernel" name="suvojeet-sengupta/device_xiaomi_redwood-kernel" remote="github" revision="clo" clone-depth="1" />
+  <!-- 6.12 kernel, used by the device tree's clo-6.12 branch -->
+  <project path="device/xiaomi/redwood-kernel-6.12" name="suvojeet-sengupta/device_xiaomi_redwood-kernel-6.12" remote="github" revision="main" clone-depth="1" />
   <project path="vendor/xiaomi/redwood" name="suvojeet-sengupta/vendor_xiaomi_redwood" remote="github" revision="clo" clone-depth="1" />
   <project path="vendor/xiaomi/redwood-miuicamera" name="suvojeet-sengupta/android_vendor_xiaomi_redwood-miuicamera" remote="github" revision="leica" clone-depth="1" />
   <project path="packages/apps/ParanoidSense" name="AOSPA/android_packages_apps_ParanoidSense" remote="aospa" revision="calcite" />
