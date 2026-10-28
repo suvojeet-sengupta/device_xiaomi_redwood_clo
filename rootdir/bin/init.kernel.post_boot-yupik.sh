@@ -166,11 +166,18 @@ echo 1 > /sys/devices/system/cpu/cpu7/core_ctl/task_thres
 # Disable Core control on silver
 echo 0 > /sys/devices/system/cpu/cpu0/core_ctl/enable
 
+# 6.12's WALT leaves core control off on every cluster (5.4 had it on for
+# gold and gold+), so idle big cores were never paused
+echo 1 > /sys/devices/system/cpu/cpu4/core_ctl/enable
+echo 1 > /sys/devices/system/cpu/cpu7/core_ctl/enable
+
 # Setting b.L scheduler parameters
-echo 71 95 > /proc/sys/walt/sched_upmigrate
+# WALT rejects an upmigrate below the current downmigrate, so lower
+# downmigrate first; the other order left upmigrate at its 95% default
 echo 65 85 > /proc/sys/walt/sched_downmigrate
-echo 100 > /proc/sys/walt/sched_group_upmigrate
+echo 71 95 > /proc/sys/walt/sched_upmigrate
 echo 85 > /proc/sys/walt/sched_group_downmigrate
+echo 100 > /proc/sys/walt/sched_group_upmigrate
 echo 1 > /proc/sys/walt/sched_walt_rotate_big_tasks
 
 
