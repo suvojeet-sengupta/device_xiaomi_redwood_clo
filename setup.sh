@@ -1,9 +1,9 @@
 #!/bin/bash
 #
-# Set up redwood in a Paranoid Android calcite tree.
+# Set up redwood with the 6.12 kernel in a Paranoid Android calcite tree.
 #
 # Run it from the root of a synced AOSPA tree:
-#   ~/redwood-setup/setup.sh
+#   ~/redwood-6.12-setup/setup.sh
 #
 # It adds the redwood local manifest, syncs the redwood repos and clones the
 # signing keys from GitHub into ~/keys. It never makes keys: a build signed
@@ -78,6 +78,13 @@ for key in $KEYS; do
     [ -f "$KEYS_DIR/$key.pk8" ] && [ -f "$KEYS_DIR/$key.x509.pem" ] ||
         die "$KEYS_REPO has no $key key"
 done
+
+branch=$(git -C device/xiaomi/redwood rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+grep -q "redwood-kernel-6.12" device/xiaomi/redwood/BoardConfig.mk ||
+    die "device/xiaomi/redwood isn't the clo-6.12 device tree ($branch); check the local manifest"
+[ -f device/xiaomi/redwood-kernel-6.12/Image ] ||
+    die "no 6.12 kernel in device/xiaomi/redwood-kernel-6.12"
+echo "    kernel $(sed -n 's/^release=//p' device/xiaomi/redwood-kernel-6.12/build-info.txt)"
 
 echo
 echo "Now build with: $HERE/build.sh"
