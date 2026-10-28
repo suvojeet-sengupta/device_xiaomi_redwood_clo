@@ -29,8 +29,10 @@ This tree builds Paranoid Android `calcite` (Android 17) and PenguinOS
 
 ## What's in the tree
 
-- Kernel: prebuilt Turbo (5.4.302), with SukiSU Ultra, from
-  `device/xiaomi/redwood-kernel`
+- Kernel: prebuilt 6.12.81-Suvkernel (Qualcomm KERNEL.PLATFORM.5.0.r48), from
+  `device/xiaomi/redwood-kernel-6.12`, with every module in the vendor
+  ramdisk. Source: [redwood-6.12-kernel](https://github.com/suvojeet-sengupta/redwood-6.12-kernel)
+  (`r48`). The 5.4 ROM is the `clo` branch.
 - Vendor: extracted from stock HyperOS, in `vendor/xiaomi/redwood`
 - Camera: Leica mod MIUI Camera, from `vendor/xiaomi/redwood-miuicamera` (`leica` branch)
 - Audio: Dolby Atmos, from `hardware/dolby`
@@ -47,20 +49,24 @@ This tree builds Paranoid Android `calcite` (Android 17) and PenguinOS
 ## Building
 
 You need a synced Paranoid Android `calcite` tree. The setup and build
-scripts are in the
-[`clo-setup`](https://github.com/suvojeet-sengupta/device_xiaomi_redwood_clo/tree/clo-setup)
-branch. Run these from the root of the tree:
+scripts for this branch are in
+[`clo-6.12-setup`](https://github.com/suvojeet-sengupta/device_xiaomi_redwood_clo/tree/clo-6.12-setup).
+Run these from the root of the tree:
 
 ```bash
-git clone -b clo-setup https://github.com/suvojeet-sengupta/device_xiaomi_redwood_clo.git ~/redwood-setup
-~/redwood-setup/setup.sh
-~/redwood-setup/build.sh
+git clone -b clo-6.12-setup https://github.com/suvojeet-sengupta/device_xiaomi_redwood_clo.git ~/redwood-6.12-setup
+~/redwood-6.12-setup/setup.sh
+~/redwood-6.12-setup/build.sh
 ```
 
-`setup.sh` adds the redwood local manifest, syncs the redwood repos and makes
-signing keys in `~/keys` if there are none yet. `build.sh` builds a signed
-ROM; the flashable zip ends up in the tree root, and boot, vendor_boot and
-dtbo in `images/`.
+`setup.sh` adds the redwood local manifest (this branch and the 6.12 kernel
+prebuilt), syncs the redwood repos and clones the signing keys into `~/keys`.
+`build.sh` builds a ROM signed with those keys; the flashable zip ends up in
+the tree root, and boot, vendor_boot and dtbo in `images/`. 6.12 builds
+stay out of the OTA feed.
+
+6.12 shares `/data` with the 5.4 ROM on the other slot: back up before
+flashing, and go back with `fastboot --set-active` if it doesn't boot.
 
 Keep a copy of your keys off the build machine: a build signed with other
 keys can't be flashed over yours without wiping data.
