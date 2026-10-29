@@ -115,8 +115,9 @@ function configure_memory_parameters() {
 	configure_zram_parameters
 	configure_read_ahead_kb_values
 	# Swap is zram, so swapping anon out is cheaper than refaulting
-	# file pages from storage
-	echo 100 > /proc/sys/vm/swappiness
+	# file pages from storage. File refaults ran about 4x anon ones at 100;
+	# lean further towards zram (MGLRU takes up to 200).
+	echo 160 > /proc/sys/vm/swappiness
 
 	# extra_free_kbytes raises the low and high watermarks, but only wsf
 	# spaces them out. At 1 kswapd woke at low, freed about 2 MB and went back
