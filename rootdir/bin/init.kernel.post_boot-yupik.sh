@@ -236,6 +236,10 @@ echo 1 > /proc/sys/walt/sched_conservative_pl
 
 echo deep > /sys/power/mem_sleep
 
+# WALT turns the full throttle boost on at init for a fast boot and leaves
+# it to post_boot to turn off; left on, every task ran on the big cores
+echo 0 > /proc/sys/walt/sched_boost
+
 configure_memory_parameters
 
 setprop vendor.post_boot.parsed 1
