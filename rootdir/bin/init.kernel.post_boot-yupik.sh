@@ -166,10 +166,11 @@ echo 1 > /sys/devices/system/cpu/cpu7/core_ctl/task_thres
 # Disable Core control on silver
 echo 0 > /sys/devices/system/cpu/cpu0/core_ctl/enable
 
-# 6.12's WALT leaves core control off on every cluster (5.4 had it on for
-# gold and gold+), so idle big cores were never paused
-echo 1 > /sys/devices/system/cpu/cpu4/core_ctl/enable
-echo 1 > /sys/devices/system/cpu/cpu7/core_ctl/enable
+# Keep core control off on gold and gold+ too: on 6.12 it pauses big cores
+# outright, which costs wake-up latency, and idle cores already sleep in
+# their CPU idle states
+echo 0 > /sys/devices/system/cpu/cpu4/core_ctl/enable
+echo 0 > /sys/devices/system/cpu/cpu7/core_ctl/enable
 
 # Setting b.L scheduler parameters
 # WALT rejects an upmigrate below the current downmigrate, so lower
