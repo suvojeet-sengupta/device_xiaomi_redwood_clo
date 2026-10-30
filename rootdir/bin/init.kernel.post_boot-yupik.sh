@@ -139,6 +139,10 @@ ddr_type=`od -An -tx /proc/device-tree/memory/ddr_device_type`
 ddr_type4="07"
 ddr_type5="08"
 
+# The 6.12 kernel boots with sched_walt.disable=1 and schedules with PELT,
+# EAS and schedutil; WALT's sysctls, core control and governor only exist
+# when WALT runs, so only tune them then
+if [ -d /proc/sys/walt ]; then
 # Core control parameters for gold
 # Prefer CPU4 for isolation based on the thermal characteristics.
 echo 1 0 0 > /sys/devices/system/cpu/cpu4/core_ctl/not_preferred
@@ -184,6 +188,7 @@ echo 1 > /proc/sys/walt/sched_walt_rotate_big_tasks
 
 
 echo 0 > /proc/sys/walt/sched_coloc_busy_hysteresis_enable_cpus
+fi
 
 # cpuset parameters
 echo 0-1 > /dev/cpuset/background/cpus
@@ -191,12 +196,12 @@ echo 0-3 > /dev/cpuset/restricted/cpus
 echo 0-2 > /dev/cpuset/system-background/cpus
 echo 0-6 > /dev/cpuset/foreground/cpus
 
+if [ -d /proc/sys/walt ]; then
 # configure governor settings for silver cluster
 echo "walt" > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor
 echo 0 > /sys/devices/system/cpu/cpufreq/policy0/walt/down_rate_limit_us
 echo 0 > /sys/devices/system/cpu/cpufreq/policy0/walt/up_rate_limit_us
 echo 1152000 > /sys/devices/system/cpu/cpufreq/policy0/walt/hispeed_freq
-echo 300000 > /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq
 echo 1 > /sys/devices/system/cpu/cpufreq/policy0/walt/pl
 
 # configure input boost settings
@@ -208,7 +213,6 @@ echo "walt" > /sys/devices/system/cpu/cpufreq/policy4/scaling_governor
 echo 0 > /sys/devices/system/cpu/cpufreq/policy4/walt/down_rate_limit_us
 echo 0 > /sys/devices/system/cpu/cpufreq/policy4/walt/up_rate_limit_us
 echo 1228800 > /sys/devices/system/cpu/cpufreq/policy4/walt/hispeed_freq
-echo 691200 > /sys/devices/system/cpu/cpufreq/policy4/scaling_min_freq
 echo 85 > /sys/devices/system/cpu/cpufreq/policy4/walt/hispeed_load
 echo 0 > /sys/devices/system/cpu/cpufreq/policy4/walt/rtg_boost_freq
 echo 1 > /sys/devices/system/cpu/cpufreq/policy4/walt/pl
@@ -218,7 +222,6 @@ echo "walt" > /sys/devices/system/cpu/cpufreq/policy7/scaling_governor
 echo 0 > /sys/devices/system/cpu/cpufreq/policy7/walt/down_rate_limit_us
 echo 0 > /sys/devices/system/cpu/cpufreq/policy7/walt/up_rate_limit_us
 echo 1324800 > /sys/devices/system/cpu/cpufreq/policy7/walt/hispeed_freq
-echo 806400 > /sys/devices/system/cpu/cpufreq/policy7/scaling_min_freq
 echo 85 > /sys/devices/system/cpu/cpufreq/policy7/walt/hispeed_load
 echo 0 > /sys/devices/system/cpu/cpufreq/policy7/walt/rtg_boost_freq
 echo 1 > /sys/devices/system/cpu/cpufreq/policy7/walt/pl
@@ -231,6 +234,18 @@ echo 20000000 > /proc/sys/walt/sched_task_unfilter_period
 
 # Enable conservative pl
 echo 1 > /proc/sys/walt/sched_conservative_pl
+else
+# PELT and schedutil: the kernel already boots with schedutil and fast
+# PELT (sched_pelt_multiplier=4), so only make sure of the governor
+for policy in /sys/devices/system/cpu/cpufreq/policy*; do
+	echo "schedutil" > $policy/scaling_governor
+done
+fi
+
+# Frequency floors, for either governor
+echo 300000 > /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq
+echo 691200 > /sys/devices/system/cpu/cpufreq/policy4/scaling_min_freq
+echo 806400 > /sys/devices/system/cpu/cpufreq/policy7/scaling_min_freq
 
 # Memory and L3 DCVS: 6.12 sets them up from the device tree (bus_dcvs);
 # the 5.4 memlat and bw_hwmon devfreq nodes are gone.
@@ -239,7 +254,7 @@ echo deep > /sys/power/mem_sleep
 
 # WALT turns the full throttle boost on at init for a fast boot and leaves
 # it to post_boot to turn off; left on, every task ran on the big cores
-echo 0 > /proc/sys/walt/sched_boost
+[ -d /proc/sys/walt ] && echo 0 > /proc/sys/walt/sched_boost
 
 configure_memory_parameters
 
