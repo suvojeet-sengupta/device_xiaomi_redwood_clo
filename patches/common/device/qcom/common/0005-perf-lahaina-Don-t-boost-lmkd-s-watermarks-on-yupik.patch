@@ -1,0 +1,40 @@
+From 47a62bb19237b374824a32817bf6bd1307dc6bc6 Mon Sep 17 00:00:00 2001
+From: suvojeet-sengupta <suvojitsengupta21@gmail.com>
+Date: Fri, 30 Oct 2026 10:08:27 +0530
+Subject: [PATCH] perf: lahaina: Don't boost lmkd's watermarks on yupik
+
+CLO lmkd multiplies the gaps between the min, low and high watermarks by
+ro.lmk.nstrat_wmark_boost_factor, 4 here. That is sized for the default
+watermark_scale_factor of 10, but redwood's post_boot sets it to 100 so
+kswapd has room, and the two together put lmkd's low watermark at about
+355 MB and high at about 514 MB while kswapd stops reclaiming at about
+150 MB. Free memory never got above lmkd's low, so every 70 ms critical
+stall counted as low memory: 113 apps killed in the first 12 minutes
+after boot, with 2.3 GB of file cache and 2 GB of zram free.
+
+With 1, lmkd's low and high are about 89 and 128 MB, and kills went
+from about 9 to about 4 a minute under the same use.
+---
+ vendor/perf/configs/lahaina/perf/perfconfigstore.xml | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/vendor/perf/configs/lahaina/perf/perfconfigstore.xml b/vendor/perf/configs/lahaina/perf/perfconfigstore.xml
+index a90275d..b9da3fd 100644
+--- a/vendor/perf/configs/lahaina/perf/perfconfigstore.xml
++++ b/vendor/perf/configs/lahaina/perf/perfconfigstore.xml
+@@ -76,7 +76,11 @@ ________________________________________________________________________________
+                 <Prop Name="ro.lmk.nstrat_psi_partial_ms" Value="70" />
+                 <Prop Name="ro.lmk.nstrat_psi_complete_ms" Value="70" />
+                 <Prop Name="ro.lmk.psi_scrit_complete_stall_ms" Value="250" />
+-                <Prop Name="ro.lmk.nstrat_wmark_boost_factor" Value="4" />
++                <!-- redwood: lmkd multiplies the low-min and high-min watermark gaps
++                     by this. post_boot already sets watermark_scale_factor to 100,
++                     so x4 put lmkd's low at ~355 MB with kswapd stopping at ~150 MB:
++                     free memory always looked low and every critical stall killed -->
++                <Prop Name="ro.lmk.nstrat_wmark_boost_factor" Value="1" />
+                 <Prop Name="vendor.perf.gestureflingboost.enable" Value="true" />
+                 <Prop Name="ro.vendor.qti.sys.fw.bg_apps_limit" Value="96" />
+                 <Prop Name="ro.vendor.qti.sys.fw.bg_apps_limit" Value="60" Target="shima" />
+-- 
+2.55.0
+
