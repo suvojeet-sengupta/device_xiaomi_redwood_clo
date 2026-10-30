@@ -95,7 +95,13 @@ bluetooth.profile.pan.nap.enabled?=true
 bluetooth.profile.pan.panu.enabled?=true
 bluetooth.profile.pbap.server.enabled?=true
 bluetooth.profile.sap.server.enabled?=true
-persist.bluetooth.a2dp_offload.disabled=false
+# 6.12 has no Bluetooth SLIMbus audio link yet (no btfm_slim codec, and the
+# sound card only links SLIMBUS_7 for qcom,wcn-btfm), so the offload
+# encoder can't be configured: the stream restarted every 100 ms and video
+# over a BT headset played a second, stopped a second. Encode in the
+# Bluetooth stack instead.
+persist.bluetooth.a2dp_offload.disabled=true
+persist.bluetooth.leaudio_offload.disabled=true
 persist.vendor.bt.aac_frm_ctl.enabled=true
 persist.vendor.bt.aac_vbr_frm_ctl.enabled=true
 persist.vendor.qcom.bluetooth.a2dp_mcast_test.enabled=false
