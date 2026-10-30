@@ -42,6 +42,11 @@ on init
     write /dev/cpuctl/top-app/cpu.uclamp.colocate 1
 
 on early-boot
+    # Android's init.rc turns panic_on_oops on; leave it off so an oops
+    # kills the task and its backtrace reaches the log. A panic stops
+    # every CPU and USB with them, and pstore doesn't survive redwood's
+    # hard resets, so a panicking oops left nothing to read
+    write /proc/sys/kernel/panic_on_oops 0
     # Allow subsystem (modem etc) debugging
     write /sys/kernel/boot_adsp/boot 1
     write /sys/kernel/boot_cdsp/boot 1
