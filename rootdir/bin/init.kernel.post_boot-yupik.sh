@@ -139,9 +139,9 @@ ddr_type=`od -An -tx /proc/device-tree/memory/ddr_device_type`
 ddr_type4="07"
 ddr_type5="08"
 
-# The 6.12 kernel boots with sched_walt.disable=1 and schedules with PELT,
-# EAS and schedutil; WALT's sysctls, core control and governor only exist
-# when WALT runs, so only tune them then
+# The 6.12 kernel schedules with WALT. Booted with sched_walt.disable=1 it
+# falls back to PELT, EAS and schedutil, and WALT's sysctls, core control
+# and governor don't exist, so only tune them when WALT runs
 if [ -d /proc/sys/walt ]; then
 # Core control parameters for gold
 # Prefer CPU4 for isolation based on the thermal characteristics.
@@ -235,8 +235,9 @@ echo 20000000 > /proc/sys/walt/sched_task_unfilter_period
 # Enable conservative pl
 echo 1 > /proc/sys/walt/sched_conservative_pl
 else
-# PELT and schedutil: the kernel already boots with schedutil and fast
-# PELT (sched_pelt_multiplier=4), so only make sure of the governor
+# PELT and schedutil, with sched_walt.disable=1: the kernel already boots
+# with schedutil and fast PELT (sched_pelt_multiplier=4), so only make sure
+# of the governor
 for policy in /sys/devices/system/cpu/cpufreq/policy*; do
 	echo "schedutil" > $policy/scaling_governor
 done
