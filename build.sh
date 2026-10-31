@@ -21,7 +21,7 @@ grep -q "redwood-kernel-6.12" device/xiaomi/redwood/BoardConfig.mk ||
     die "device/xiaomi/redwood isn't the clo-6.12 device tree, run setup.sh first"
 [ -f device/xiaomi/redwood-kernel-6.12/Image ] || die "no 6.12 kernel prebuilt, run setup.sh first"
 
-./rom-build.sh redwood -t user -s "$KEYS_DIR"
+./rom-build.sh redwood -t user -v official -s "$KEYS_DIR"
 
 tf=$(ls -t ./*-redwood-signed-target_files.zip 2>/dev/null | head -n 1)
 [ -n "$tf" ] || die "no signed target files, the build failed"
