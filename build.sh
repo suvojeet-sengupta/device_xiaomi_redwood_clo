@@ -2,7 +2,7 @@
 #
 # Build a signed Paranoid Android for redwood with the 6.12 kernel.
 #
-# Run it from the root of the AOSPA tree, after setup.sh:
+# Run it from the root of the AOSPA or PenguinOS tree, after setup.sh:
 #   ~/redwood-6.12-setup/build.sh
 #
 # The flashable zip ends up in the tree root, boot, vendor_boot and dtbo for
@@ -23,7 +23,7 @@ grep -q "redwood-kernel-6.12" device/xiaomi/redwood/BoardConfig.mk ||
 
 ./rom-build.sh redwood -t user -s "$KEYS_DIR"
 
-tf=$(ls -t aospa-*-signed-target_files.zip 2>/dev/null | head -n 1)
+tf=$(ls -t ./*-redwood-signed-target_files.zip 2>/dev/null | head -n 1)
 [ -n "$tf" ] || die "no signed target files, the build failed"
 zip=${tf%-signed-target_files.zip}.zip
 
