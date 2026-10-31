@@ -35,7 +35,7 @@ This tree builds Paranoid Android `calcite` (Android 17) and PenguinOS
   ramdisk. Source: [redwood-6.12-kernel](https://github.com/suvojeet-sengupta/redwood-6.12-kernel)
   (`main`). The 5.4 ROM is the `clo` branch.
 - Vendor: extracted from stock HyperOS, in `vendor/xiaomi/redwood`
-- Camera: Leica mod MIUI Camera, from `vendor/xiaomi/redwood-miuicamera` (`leica` branch)
+- Camera: stock MIUI Camera, from `vendor/xiaomi/redwood-miuicamera` (`miui-seventeen` branch)
 - Audio: Dolby Atmos, from `hardware/dolby`
 - Face unlock: ParanoidSense
 - Xiaomi parts: charging control and other device settings
