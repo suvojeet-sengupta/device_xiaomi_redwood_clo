@@ -381,6 +381,16 @@ PRODUCT_PACKAGES += \
     WifiOverlayRedwoodGL \
     WifiOverlayRedwoodIN
 
+# Play Integrity: PIHooks' certified build for Play Services, and the Play
+# Integrity Fix kept off until it is switched on in Settings. AOSPA only:
+# PenguinOS (it has vendor/custom-preference) keeps its own setup.
+ifeq ($(wildcard vendor/custom-preference),)
+PRODUCT_PACKAGES += \
+    PIHooksOverlayRedwood
+PRODUCT_SYSTEM_PROPERTIES += \
+    persist.sys.pihooks.disable.gms_props=true
+endif
+
 PRODUCT_ENFORCE_RRO_TARGETS := *
 
 # Partitions
