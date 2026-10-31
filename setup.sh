@@ -43,9 +43,14 @@ fingerprint() {
 echo "==> Adding the redwood local manifest"
 mkdir -p .repo/local_manifests
 cp "$HERE/redwood.xml" .repo/local_manifests/redwood.xml
+# Trees whose own manifest has ParanoidSense (PenguinOS) would get it twice
+if grep -rqs 'path="packages/apps/ParanoidSense"' .repo/manifests/; then
+    sed -i '/path="packages\/apps\/ParanoidSense"/d' .repo/local_manifests/redwood.xml
+    echo "    ParanoidSense comes from the ROM's manifest"
+fi
 
 echo "==> Syncing the redwood repos"
-paths=$(grep -oE 'path="[^"]+"' "$HERE/redwood.xml" | cut -d'"' -f2)
+paths=$(grep -oE 'path="[^"]+"' .repo/local_manifests/redwood.xml | cut -d'"' -f2)
 # shellcheck disable=SC2086
 repo sync -c --no-tags --force-sync -j"$(nproc --all)" $paths
 
