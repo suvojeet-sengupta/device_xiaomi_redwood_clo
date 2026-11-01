@@ -251,10 +251,7 @@ echo 806400 > /sys/devices/system/cpu/cpufreq/policy7/scaling_min_freq
 # Memory and L3 DCVS: 6.12 sets them up from the device tree (bus_dcvs);
 # the 5.4 memlat and bw_hwmon devfreq nodes are gone.
 
-# Suspend with s2idle. Deep suspend goes through PSCI SYSTEM_SUSPEND, and
-# on the 6.12 kernel the first one after a boot left the phone dead or
-# powered off, with nothing in the logs
-echo s2idle > /sys/power/mem_sleep
+echo deep > /sys/power/mem_sleep
 
 # WALT turns the full throttle boost on at init for a fast boot and leaves
 # it to post_boot to turn off; left on, every task ran on the big cores
