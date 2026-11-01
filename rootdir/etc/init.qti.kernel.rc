@@ -87,8 +87,8 @@ on property:sys.boot_completed=1
     # rcupdate.rcu_expedited=1 speeds up the boot, but left on every
     # synchronize_rcu() IPIs all CPUs awake, idle ones included
     write /sys/kernel/rcu_expedited 0
-    # EAS puts latency sensitive tasks on idle CPUs instead of packing them
-    # with others, so the foreground app gets a core right away
+    # The scheduler puts latency sensitive tasks on idle CPUs instead of
+    # packing them with others, so the foreground app gets a core right away
     write /dev/cpuctl/top-app/cpu.uclamp.latency_sensitive 1
     # Background work never needs more than half of a CPU's top frequency;
     # left unclamped it ran the cores up with nobody using the phone
