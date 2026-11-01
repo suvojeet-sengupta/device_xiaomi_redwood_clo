@@ -259,4 +259,12 @@ echo deep > /sys/power/mem_sleep
 
 configure_memory_parameters
 
+# Keep the display interrupt on CPU2 and the GPU's on CPU1, out of
+# msm_irqbalance's way (it ignores them by their GIC numbers). Look them
+# up by name, the Linux IRQ numbers moved on 6.12
+for irq in msm_drm:2 kgsl_3d0_irq:1; do
+	n=$(awk -v name="${irq%:*}" '$NF == name { sub(":", "", $1); print $1 }' /proc/interrupts)
+	[ -n "$n" ] && echo ${irq#*:} > /proc/irq/$n/smp_affinity_list
+done
+
 setprop vendor.post_boot.parsed 1
