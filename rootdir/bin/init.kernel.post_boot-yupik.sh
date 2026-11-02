@@ -34,17 +34,13 @@ function configure_zram_parameters() {
 	MemTotalStr=`cat /proc/meminfo | grep MemTotal`
 	MemTotal=${MemTotalStr:16:8}
 
-	# Zram disk - 75% for Go and < 2GB devices .
-	# For >2GB Non-Go devices, size = 50% of RAM size. Limit the size to 4GB.
-	# And enable lz4 zram compression for Go targets.
+	# Zram disk - 75% of RAM, limited to 4GB. At 50% the 3GB disk of a 6GB
+	# phone ran three quarters full and lmkd killed apps to make room; zstd
+	# packs about 4:1 here, so the extra GB costs a quarter of that in RAM.
 
 	let RamSizeGB="( $MemTotal / 1048576 ) + 1"
 	diskSizeUnit=M
-	if [ $RamSizeGB -le 2 ]; then
-		let zRamSizeMB="( $RamSizeGB * 1024 ) * 3 / 4"
-	else
-		let zRamSizeMB="( $RamSizeGB * 1024 ) / 2"
-	fi
+	let zRamSizeMB="( $RamSizeGB * 1024 ) * 3 / 4"
 
 	# use MB avoid 32 bit overflow
 	if [ $zRamSizeMB -gt 4096 ]; then
@@ -118,6 +114,10 @@ function configure_memory_parameters() {
 	# file pages from storage. File refaults ran about 4x anon ones at 100;
 	# lean further towards zram (MGLRU takes up to 200).
 	echo 160 > /proc/sys/vm/swappiness
+
+	# Keep the dentry and inode caches longer than the page cache, so file
+	# lookups and app starts don't go back to the storage as often
+	echo 60 > /proc/sys/vm/vfs_cache_pressure
 
 	# extra_free_kbytes raises the low and high watermarks, but only wsf
 	# spaces them out. At 1 kswapd woke at low, freed about 2 MB and went back
