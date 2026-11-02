@@ -7,16 +7,15 @@ Without a QTI NR icon type, an NR NSA override from TelephonyDisplayInfo
 is shown with the anchor network's icon, so devices whose modem never
 reports an NR icon type show 4G on 5G NSA networks. Add an overlayable
 config to show the override's 5G icon in that case.
-
 ---
- packages/SystemUI/res/values/nr_config.xml               | 6 ++++++
- .../mobile/domain/interactor/MobileIconInteractor.kt     | 9 ++++++++-
- 2 files changed, 14 insertions(+), 1 deletion(-)
+ packages/SystemUI/res/values/nr_config.xml             |  6 ++++++
+ .../mobile/domain/interactor/MobileIconInteractor.kt   | 10 +++++++++-
+ 2 files changed, 15 insertions(+), 1 deletion(-)
  create mode 100644 packages/SystemUI/res/values/nr_config.xml
 
 diff --git a/packages/SystemUI/res/values/nr_config.xml b/packages/SystemUI/res/values/nr_config.xml
 new file mode 100644
-index 00000000..57ef06e6
+index 0000000..57ef06e
 --- /dev/null
 +++ b/packages/SystemUI/res/values/nr_config.xml
 @@ -0,0 +1,6 @@
@@ -27,19 +26,20 @@ index 00000000..57ef06e6
 +    <bool name="config_nrNsaIconFromDisplayInfo">false</bool>
 +</resources>
 diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/pipeline/mobile/domain/interactor/MobileIconInteractor.kt b/packages/SystemUI/src/com/android/systemui/statusbar/pipeline/mobile/domain/interactor/MobileIconInteractor.kt
-index 8f994d87..0513dea6 100644
+index 0b7a5a1..eaa807c 100644
 --- a/packages/SystemUI/src/com/android/systemui/statusbar/pipeline/mobile/domain/interactor/MobileIconInteractor.kt
 +++ b/packages/SystemUI/src/com/android/systemui/statusbar/pipeline/mobile/domain/interactor/MobileIconInteractor.kt
-@@ -555,7 +555,7 @@ class MobileIconInteractorImpl(
- 
+@@ -539,7 +539,8 @@ class MobileIconInteractorImpl(
      private fun getLookupKey(resolvedNetworkType: ResolvedNetworkType,
                               customizationInfo: MobileIconCustomizationMode): String {
--        return if (isNsa(resolvedNetworkType.networkType)) {
-+        return if (isNsa(resolvedNetworkType.networkType) && !nrNsaIconFromDisplayInfo) {
+         return if (isNsa(resolvedNetworkType.networkType) &&
+-                FiveGServiceClient.getInstance(context).isServiceConnected) {
++                FiveGServiceClient.getInstance(context).isServiceConnected &&
++                !nrNsaIconFromDisplayInfo) {
              if (customizationInfo.originNetworkType  == TelephonyManager.NETWORK_TYPE_UNKNOWN) {
                  MobileMappings.toIconKey(customizationInfo.voiceNetworkType)
              }else {
-@@ -566,6 +566,13 @@ class MobileIconInteractorImpl(
+@@ -550,6 +551,13 @@ class MobileIconInteractorImpl(
          }
      }
  
@@ -53,6 +53,3 @@ index 8f994d87..0513dea6 100644
      private fun isNsa(networkType: Int): Boolean {
          return networkType == TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA_MMWAVE
                  || networkType == TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA
--- 
-2.55.0
-
