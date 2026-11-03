@@ -2,8 +2,13 @@
 
 Unofficial redwood builds update through ParanoidHub (Settings > System >
 System update) like official ones. `ParanoidHubOverlayRedwood` points it at
-[`redwood.json`](redwood.json) here on the `clo` branch, and the
+[`redwood.json`](redwood.json) here on the `clo-6.12` branch, and the
 `UnofficialOta` feature patch shows the maintainer on the update screen.
+
+6.12 builds have their own feed, apart from the 5.4 builds whose feed is on
+the `clo` branch: a phone on 6.12 is only offered 6.12 builds, and a phone on
+5.4 never gets one. To move a phone from 5.4 to 6.12, flash a 6.12 build from
+recovery once; it updates over the air after that.
 
 ParanoidHub offers a build when its `build_type` matches the phone's
 `ro.aospa.build.variant` (`unofficial`) and its `datetime` is newer than the
@@ -12,7 +17,7 @@ is all a release needs.
 
 ## Releasing a build
 
-1. Build with `~/redwood-setup/build.sh`. It runs `make-feed.sh` at the end,
+1. Build with `~/redwood-6.12-setup/build.sh`. It runs `make-feed.sh` at the end,
    which rewrites `ota/redwood.json` in the device tree. To do it by hand:
 
    ```bash
@@ -21,10 +26,10 @@ is all a release needs.
 
    Put the changes in `ota/changelog.txt` before running it; it goes into
    the feed as the changelog ParanoidHub shows.
-2. Upload the zip as an asset of a `redwood-<date>` release of this repo.
+2. Upload the zip as an asset of a `redwood-6.12-<date>` release of this repo.
    GitHub takes assets up to 2 GiB; for a bigger zip, host it elsewhere and
    pass its direct download url as the second argument of `make-feed.sh`.
-3. Commit `ota/redwood.json` and push `clo`. Phones see the build on their
+3. Commit `ota/redwood.json` and push `clo-6.12`. Phones see the build on their
    next check, or when you tap "Check for update".
 
 To pull a broken build, revert that commit. A feed with an empty `updates`

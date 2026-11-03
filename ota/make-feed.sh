@@ -8,7 +8,7 @@
 #
 # Run it from the root of the AOSPA tree right after the build, so the
 # build props in out/ belong to the zip. Without a url the zip is expected
-# as an asset of the redwood-<date> release of the device tree on GitHub.
+# as an asset of the redwood-6.12-<date> release of the device tree on GitHub.
 # The changelog comes from changelog.txt next to this script, if there is
 # one. The feed is written to <device>.json next to this script; commit and
 # push it to publish the build (see README.md).
@@ -37,7 +37,7 @@ minor=$(getprop ro.aospa.version.minor)
 date=$(date -u -d "@$timestamp" +%Y%m%d)
 size=$(stat -c %s "$zip")
 name=$(basename "$zip")
-url=${2:-https://github.com/suvojeet-sengupta/device_xiaomi_redwood_clo/releases/download/$device-$date/$name}
+url=${2:-https://github.com/suvojeet-sengupta/device_xiaomi_redwood_clo/releases/download/$device-6.12-$date/$name}
 
 if [ -z "${2:-}" ] && [ "$size" -ge $((2 * 1024 * 1024 * 1024)) ]; then
     die "$name is over 2 GiB, too big for a GitHub release; pass a url"
