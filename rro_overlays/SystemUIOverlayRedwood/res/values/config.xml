@@ -79,4 +79,7 @@
     <!-- The modem never reports a QTI NR icon type, show 5G for the NR NSA
          override instead of the LTE anchor's icon. -->
     <bool name="config_nrNsaIconFromDisplayInfo">true</bool>
+
+    <!-- With two SIMs, show one stacked signal icon: bars for the first SIM, dots for the second -->
+    <bool name="config_enable_stacked_icon">true</bool>
 </resources>
