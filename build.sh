@@ -21,9 +21,17 @@ grep -q "redwood-kernel-6.12" device/xiaomi/redwood/BoardConfig.mk ||
     die "device/xiaomi/redwood isn't the clo-6.12 device tree, run setup.sh first"
 [ -f device/xiaomi/redwood-kernel-6.12/Image ] || die "no 6.12 kernel prebuilt, run setup.sh first"
 
-./rom-build.sh redwood -t user -v official -s "$KEYS_DIR"
+# AOSPA only knows the alpha, beta and stable variants and builds unofficial
+# without one; PenguinOS takes official.
+variant=()
+if [ -f .repo/manifests/penguin.xml ] || [ -d vendor/custom-preference ] ||
+        [ -f frameworks/base/core/res/res/values/custom_config.xml ]; then
+    variant=(-v official)
+fi
 
-tf=$(ls -t ./*-redwood-signed-target_files.zip 2>/dev/null | head -n 1)
+./rom-build.sh redwood -t user "${variant[@]}" -s "$KEYS_DIR"
+
+tf=$(ls -t ./*redwood*-signed-target_files.zip 2>/dev/null | head -n 1)
 [ -n "$tf" ] || die "no signed target files, the build failed"
 zip=${tf%-signed-target_files.zip}.zip
 
