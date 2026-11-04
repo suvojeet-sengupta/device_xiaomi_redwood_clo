@@ -72,8 +72,10 @@ flashing, and go back with `fastboot --set-active` if it doesn't boot.
 Keep a copy of your keys off the build machine: a build signed with other
 keys can't be flashed over yours without wiping data.
 
-The source patches redwood needs are in `patches/` and are applied by
-`vendorsetup.sh` when you build, so there's nothing to apply by hand.
+The source patches redwood needs are kept in
+[device_xiaomi_redwood-patches](https://github.com/suvojeet-sengupta/device_xiaomi_redwood-patches),
+which the local manifest syncs to `device/xiaomi/redwood-patches`. They're
+applied when you run `envsetup.sh`, so there's nothing to apply by hand.
 
 ## Updating vendor blobs
 
