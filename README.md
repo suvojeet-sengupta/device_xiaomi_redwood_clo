@@ -19,8 +19,8 @@ git clone -b clo-6.12-setup https://github.com/suvojeet-sengupta/device_xiaomi_r
 ```
 
 - `setup.sh` puts this `redwood.xml` in `.repo/local_manifests` (device tree
-  on `clo-6.12`, the 6.12 kernel prebuilt at
-  `device/xiaomi/redwood-kernel-6.12`), syncs the redwood repos, clones the
+  on `clo-6.12`, the source patches at `device/xiaomi/redwood-patches`, the
+  6.12 kernel prebuilt at `device/xiaomi/redwood-kernel-6.12`), syncs the redwood repos, clones the
   signing keys into `~/keys` and checks that the tree really builds 6.12.
 - `build.sh` builds a signed ROM. The flashable zip ends up in the tree root,
   and boot, vendor_boot and dtbo in `images/`. It refuses a tree that isn't

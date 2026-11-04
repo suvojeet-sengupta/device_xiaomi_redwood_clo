@@ -10,6 +10,7 @@
 
   <!-- redwood -->
   <project path="device/xiaomi/redwood" name="suvojeet-sengupta/device_xiaomi_redwood_clo" remote="github" revision="clo-6.12" />
+  <project path="device/xiaomi/redwood-patches" name="suvojeet-sengupta/device_xiaomi_redwood-patches" remote="github" revision="clo-6.12" />
   <!-- 6.12.97-Suvkernel, CLO KERNEL.PLATFORM.5.0 -->
   <project path="device/xiaomi/redwood-kernel-6.12" name="suvojeet-sengupta/device_xiaomi_redwood-kernel-6.12" remote="github" revision="main" clone-depth="1" />
   <project path="vendor/xiaomi/redwood" name="suvojeet-sengupta/vendor_xiaomi_redwood" remote="github" revision="clo" clone-depth="1" />
