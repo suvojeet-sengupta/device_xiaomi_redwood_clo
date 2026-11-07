@@ -1,0 +1,10 @@
+Kernel: Suvkernel 3.2
+- NFC support (NXP)
+- Wi-Fi and mobile data recover by themselves after a firmware crash
+- Display: fixed under-volted display clocks behind rare garbled frames
+- Audio: voice wakeup crash fix, more reliable sound start
+- Lower RAM clock when idle, memory scaling works after sleep
+- Storage (f2fs, UFS, dm-verity), zram and sleep fixes from Linux 6.12.98-116
+- Rust Binder, with C Binder as fallback
+Camera
+- Photo and video filters work on the rear and front cameras
