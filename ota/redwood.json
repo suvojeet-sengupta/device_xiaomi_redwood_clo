@@ -1,17 +1,3 @@
 {
-  "updates": [
-    {
-      "android_spl": "2026-08-05",
-      "build_type": "unofficial",
-      "changelog_device": "Kernel: Suvkernel 6.12 with Linux 6.12.98-116 networking and core fixes\n- Hotspot and USB tethering: connection tracking fixes\n- VPN and Wi-Fi calling: fixed a kernel crash while a tunnel closes\n- Mobile data: TCP sends a packet size based on the network's real setting\n- Bluetooth: fixed crashes when a device disconnects mid-read\n- Wi-Fi: deadlock fix\n- /sdcard: file sizes no longer flip back to old values\n- System partition (EROFS): memory leak and crash fixes\n- Security: stricter kernel data checks for apps, Landlock sandbox fixes\n- io_uring, scheduler, BPF and arm64 fixes\n- Fewer freezes during suspend, shutdown and app crashes\nCamera\n- Photo and video filters work on the rear and front cameras",
-      "datetime": "1794081894",
-      "filename": "aospa-calcite-unofficial-redwood-20261107.zip",
-      "maintainer": "Suvojeet Sengupta",
-      "recovery_sha256": "e9666d73328e9e6ad61b1b2e949a55f59ac65dad145b1eb174313ac0d6d01f36",
-      "size": "2598161350",
-      "url": "https://downloads.sourceforge.net/project/builds-by-suvojeet/AOSPA/redwood/20261107/aospa-calcite-unofficial-redwood-20261107.zip",
-      "version": "Calcite",
-      "version_code": "20261107"
-    }
-  ]
+  "updates": []
 }
