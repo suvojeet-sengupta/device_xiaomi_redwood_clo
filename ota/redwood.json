@@ -3,12 +3,12 @@
     {
       "android_spl": "2026-08-05",
       "build_type": "unofficial",
-      "changelog_device": "Kernel: Suvkernel 3.2 \u2014 battery and deep sleep\n- Real deep sleep: the SoC (AOSS, CX rail, DDR) now powers down with the\n  screen off. On deep suspend it never did; the kernel now uses s2idle,\n  which cut idle power a lot\n- RAM: anonymous memory faults in 4K pages again (64K folios caused\n  swap churn on 6 GB); zram runs lz4 for the swap path and recompresses\n  idle pages with zstd, so swap-in/out is faster for the same packing\n- lmkd no longer kills the launcher and apps under a memory burst\n- Wakeup sources the suspend HAL reads are labelled, so their stats and\n  CPU time are accounted\n- Carried over: NFC, Wi-Fi and modem crash recovery, and the Linux\n  6.12.98-116 storage, UFS, dm-verity and PM fixes\nCamera\n- Photo and video filters work on the rear and front cameras\nTelephony\n- Stop logging the satellite config lookup (~300 lines a minute)",
-      "datetime": "1794137225",
+      "changelog_device": "Kernel: Suvkernel 3.2 \u2014 battery and deep sleep\n- Real deep sleep: the SoC (AOSS, CX rail, DDR) now powers down with the\n  screen off. On deep suspend it never did; the kernel now uses s2idle,\n  which cut idle power a lot\n- RAM: anonymous memory faults in 4K pages again (64K folios caused\n  swap churn on 6 GB); zram runs lz4 for the swap path and recompresses\n  idle pages with zstd, so swap-in/out is faster for the same packing\n- lmkd no longer kills the launcher and apps under a memory burst\n- Wakeup sources the suspend HAL reads are labelled, so their stats and\n  CPU time are accounted\n- Carried over: NFC, Wi-Fi and modem crash recovery, and the Linux\n  6.12.98-116 storage, UFS, dm-verity and PM fixes\nDisplay\n- 90 Hz refresh rate added, next to 60 and 120 Hz\nPerformance and battery\n- Lighter scroll and animation boosts: the CPU no longer jumps to its top\n  clocks on every scroll, and the cores can sleep between frames\n- The scheduler reacts to load in 12 ms instead of 20 ms, so clocks go up\n  faster when needed and come back down sooner\n- Audio battery listener turned off\nCamera\n- Photo and video filters work on the rear and front cameras\nTelephony\n- Stop logging the satellite config lookup (~300 lines a minute)",
+      "datetime": "1794158958",
       "filename": "aospa-calcite-unofficial-redwood-20261108.zip",
       "maintainer": "Suvojeet Sengupta",
-      "recovery_sha256": "e9e090ffd694f4b045a6dbdcf941c4b2112b0f582ba4b69d5dae9e311dc0ff34",
-      "size": "2598085200",
+      "recovery_sha256": "f75214786455c6c1ac5a88156f8d1b64960e2570f4f80e92a06994e128a9c1c6",
+      "size": "2598086661",
       "url": "https://ferrari.serverhive.in/suvojeetsengupta/aospa-calcite-unofficial-redwood-20261108.zip",
       "version": "Calcite",
       "version_code": "20261108"
