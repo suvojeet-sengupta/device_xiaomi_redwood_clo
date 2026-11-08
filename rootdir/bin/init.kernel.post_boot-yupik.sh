@@ -108,7 +108,12 @@ function configure_memory_parameters() {
 
 	ProductName=`getprop ro.product.name`
 
-	configure_zram_parameters
+	# mmd sets zram up on boot_completed (mmd.zram.* in system.prop): lz4
+	# for the swap path and zstd recompression of idle pages. Only set it
+	# up here if mmd won't.
+	if [ "`getprop mmd.zram.enabled`" != "true" ]; then
+		configure_zram_parameters
+	fi
 	configure_read_ahead_kb_values
 	# Swap is zram, so swapping anon out is cheaper than refaulting
 	# file pages from storage. File refaults ran about 4x anon ones at 100;
@@ -122,8 +127,10 @@ function configure_memory_parameters() {
 	# extra_free_kbytes raises the low and high watermarks, but only wsf
 	# spaces them out. At 1 kswapd woke at low, freed about 2 MB and went back
 	# to sleep, so bursts hit the min watermark and lmkd killed down to
-	# perceptible apps; 1% of RAM between them gives it room to keep up.
-	echo 100 > /proc/sys/vm/watermark_scale_factor
+	# perceptible apps. 1% of RAM between them still left bursts such as a
+	# video transcode hitting min, and lmkd killed the launcher and GMS;
+	# 2% wakes kswapd early enough.
+	echo 200 > /proc/sys/vm/watermark_scale_factor
 
 	MemTotalStr=`cat /proc/meminfo | grep MemTotal`
 	MemTotal=${MemTotalStr:16:8}

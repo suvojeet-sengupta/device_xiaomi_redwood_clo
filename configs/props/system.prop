@@ -71,3 +71,13 @@ persist.vendor.sensors.enable.mag_filter=true
 
 # WFD
 persist.debug.wfd.enable=1
+
+# zram, set up by mmd on boot_completed: lz4 keeps swap-in and swap-out
+# cheap, and mmd recompresses pages idle for hours with zstd, which packs
+# about a fifth more. Same size and priority post_boot used.
+mmd.zram.enabled=true
+mmd.zram.size=75%
+mmd.zram.comp_algorithm=lz4
+mmd.zram.device_priority=32758
+mmd.zram.recompression.enabled=true
+mmd.zram.recompression.algorithm=zstd
