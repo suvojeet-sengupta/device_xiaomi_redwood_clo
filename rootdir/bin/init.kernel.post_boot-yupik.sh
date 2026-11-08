@@ -192,6 +192,9 @@ echo 71 95 > /proc/sys/walt/sched_upmigrate
 echo 85 > /proc/sys/walt/sched_group_downmigrate
 echo 100 > /proc/sys/walt/sched_group_upmigrate
 echo 1 > /proc/sys/walt/sched_walt_rotate_big_tasks
+# Load is tracked in 12 ms windows instead of 20, so the clocks follow a
+# burst up and come back down after it sooner
+echo 3 > /proc/sys/walt/sched_ravg_window_nr_ticks
 
 
 echo 0 > /proc/sys/walt/sched_coloc_busy_hysteresis_enable_cpus
