@@ -37,6 +37,12 @@ genfscon sysfs /devices/platform/soc/a300000.remoteproc-cdsp/wakeup u:object_r:s
 genfscon sysfs /devices/platform/soc/soc:remoteproc-wpss@8a00000/wakeup u:object_r:sysfs_wakeup:s0
 genfscon sysfs /devices/platform/soc/ae00000.qcom,mdss_mdp/wakeup u:object_r:sysfs_wakeup:s0
 genfscon sysfs /devices/platform/soc/ac0000.qcom,qupv3_1_geni_se/a84000.i2c/i2c-2/2-005a/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc/9c0000.qcom,qupv3_0_geni_se/99c000.qcom,qup_uart/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc/ac0000.qcom,qupv3_1_geni_se/a84000.i2c/i2c-3/3-005a/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc/c263000.tsens/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc/c265000.tsens/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc/c440000.qcom,spmi/spmi-0/spmi0-00/c440000.qcom,spmi:qcom,pmk8350@0:rtc@6100/rtc/rtc0/alarmtimer.1.auto/wakeup u:object_r:sysfs_wakeup:s0
+genfscon sysfs /devices/platform/soc/soc:qcom,pmic_glink/soc:qcom,pmic_glink:qcom,ucsi/power_supply/ucsi-source-psy-soc:qcom,pmic_glink:qcom,ucsi1/wakeup u:object_r:sysfs_wakeup:s0
 # note: Labelling /devices/platform/soc/soc:fingerprint_fpc/wakeup relabels the wakeup_enable node
 genfscon sysfs /devices/platform/soc/soc:fingerprint_fpc/wakeup/wakeup u:object_r:sysfs_wakeup:s0
 genfscon sysfs /devices/platform/soc/soc:fingerprint_goodix/wakeup/wakeup u:object_r:sysfs_wakeup:s0
