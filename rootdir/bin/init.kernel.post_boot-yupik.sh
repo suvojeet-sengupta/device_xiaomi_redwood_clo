@@ -258,7 +258,9 @@ echo 806400 > /sys/devices/system/cpu/cpufreq/policy7/scaling_min_freq
 # Memory and L3 DCVS: 6.12 sets them up from the device tree (bus_dcvs);
 # the 5.4 memlat and bw_hwmon devfreq nodes are gone.
 
-echo deep > /sys/power/mem_sleep
+# Suspend with s2idle. Deep suspend goes through PSCI SYSTEM_SUSPEND,
+# which never reaches AOSS sleep, CX collapse or DDR self-refresh on 6.12
+echo s2idle > /sys/power/mem_sleep
 
 # WALT turns the full throttle boost on at init for a fast boot and leaves
 # it to post_boot to turn off; left on, every task ran on the big cores
