@@ -3,15 +3,15 @@
     {
       "android_spl": "2026-08-05",
       "build_type": "unofficial",
-      "changelog_device": "Kernel: Suvkernel 3.2\n- NFC support (NXP)\n- Wi-Fi and mobile data recover by themselves after a firmware crash\n- Display: fixed under-volted display clocks behind rare garbled frames\n- Audio: voice wakeup crash fix, more reliable sound start\n- Lower RAM clock when idle, memory scaling works after sleep\n- Storage (f2fs, UFS, dm-verity), zram and sleep fixes from Linux 6.12.98-116\n- Rust Binder, with C Binder as fallback\nCamera\n- Photo and video filters work on the rear and front cameras",
-      "datetime": "1794081894",
-      "filename": "aospa-calcite-unofficial-redwood-20261107.zip",
+      "changelog_device": "Kernel: Suvkernel 3.2 \u2014 battery and deep sleep\n- Real deep sleep: the SoC (AOSS, CX rail, DDR) now powers down with the\n  screen off. On deep suspend it never did; the kernel now uses s2idle,\n  which cut idle power a lot\n- RAM: anonymous memory faults in 4K pages again (64K folios caused\n  swap churn on 6 GB); zram runs lz4 for the swap path and recompresses\n  idle pages with zstd, so swap-in/out is faster for the same packing\n- lmkd no longer kills the launcher and apps under a memory burst\n- Wakeup sources the suspend HAL reads are labelled, so their stats and\n  CPU time are accounted\n- Carried over: NFC, Wi-Fi and modem crash recovery, and the Linux\n  6.12.98-116 storage, UFS, dm-verity and PM fixes\nCamera\n- Photo and video filters work on the rear and front cameras\nTelephony\n- Stop logging the satellite config lookup (~300 lines a minute)",
+      "datetime": "1794137225",
+      "filename": "aospa-calcite-unofficial-redwood-20261108.zip",
       "maintainer": "Suvojeet Sengupta",
-      "recovery_sha256": "eeabc9398007cc6ccd4db6ae77ed4cbbc6880bd4fa3527e027a55c8d2da8d49e",
-      "size": "2598088793",
-      "url": "https://ferrari.serverhive.in/suvojeetsengupta/aospa-calcite-unofficial-redwood-20261107.zip",
+      "recovery_sha256": "e9e090ffd694f4b045a6dbdcf941c4b2112b0f582ba4b69d5dae9e311dc0ff34",
+      "size": "2598085200",
+      "url": "https://ferrari.serverhive.in/suvojeetsengupta/aospa-calcite-unofficial-redwood-20261108.zip",
       "version": "Calcite",
-      "version_code": "20261107"
+      "version_code": "20261108"
     }
   ]
 }
