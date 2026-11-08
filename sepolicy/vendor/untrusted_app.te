@@ -17,3 +17,13 @@ allowxperm untrusted_app apk_data_file:file ioctl {
   FS_IOC_SETFLAGS
   FS_IOC_GETFLAGS
 };
+
+# Franco Kernel Manager and similar monitors poll the GPU and battery
+# sysfs directly as the app. They read these through root (KernelSU)
+# instead, so the direct reads are denied and flooded the audit log
+# (over 1,300 denials with the rate limit tripping). Silence the expected
+# denials rather than grant every app access to vendor sysfs.
+dontaudit untrusted_app_all vendor_sysfs_kgsl:dir search;
+dontaudit untrusted_app_all vendor_sysfs_kgsl:{ file lnk_file } read;
+dontaudit untrusted_app_all vendor_sysfs_battery_supply:dir search;
+dontaudit untrusted_app_all vendor_sysfs_battery_supply:file read;
