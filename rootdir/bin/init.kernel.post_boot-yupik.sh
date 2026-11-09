@@ -207,12 +207,16 @@ echo 0-2 > /dev/cpuset/system-background/cpus
 echo 0-6 > /dev/cpuset/foreground/cpus
 
 if [ -d /proc/sys/walt ]; then
+# Run light and medium load close to the speed it needs: 95% target load up
+# to the mid frequency and 90% up to the smart freq cap, not 25% above it.
+# Heavier load keeps the 80% default
 # configure governor settings for silver cluster
 echo "walt" > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor
 echo 0 > /sys/devices/system/cpu/cpufreq/policy0/walt/down_rate_limit_us
 echo 0 > /sys/devices/system/cpu/cpufreq/policy0/walt/up_rate_limit_us
 echo 1152000 > /sys/devices/system/cpu/cpufreq/policy0/walt/hispeed_freq
 echo 1 > /sys/devices/system/cpu/cpufreq/policy0/walt/pl
+echo 1152000 95 1516800 90 > /sys/devices/system/cpu/cpufreq/policy0/walt/zone_max_util_pct
 
 # configure input boost settings
 echo 1324800 0 0 0 0 0 0 0 > /proc/sys/walt/input_boost/input_boost_freq
@@ -226,6 +230,7 @@ echo 1228800 > /sys/devices/system/cpu/cpufreq/policy4/walt/hispeed_freq
 echo 85 > /sys/devices/system/cpu/cpufreq/policy4/walt/hispeed_load
 echo 0 > /sys/devices/system/cpu/cpufreq/policy4/walt/rtg_boost_freq
 echo 1 > /sys/devices/system/cpu/cpufreq/policy4/walt/pl
+echo 1228800 95 1900800 90 > /sys/devices/system/cpu/cpufreq/policy4/walt/zone_max_util_pct
 
 # configure governor settings for gold+ cluster
 echo "walt" > /sys/devices/system/cpu/cpufreq/policy7/scaling_governor
@@ -235,6 +240,7 @@ echo 1324800 > /sys/devices/system/cpu/cpufreq/policy7/walt/hispeed_freq
 echo 85 > /sys/devices/system/cpu/cpufreq/policy7/walt/hispeed_load
 echo 0 > /sys/devices/system/cpu/cpufreq/policy7/walt/rtg_boost_freq
 echo 1 > /sys/devices/system/cpu/cpufreq/policy7/walt/pl
+echo 1324800 95 1862400 90 > /sys/devices/system/cpu/cpufreq/policy7/walt/zone_max_util_pct
 
 # colocation V3 settings
 echo 691200 > /sys/devices/system/cpu/cpufreq/policy0/walt/rtg_boost_freq
