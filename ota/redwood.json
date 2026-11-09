@@ -3,7 +3,7 @@
     {
       "android_spl": "2026-08-05",
       "build_type": "unofficial",
-      "changelog_device": "New in this build\n- Smart CPU limits: light work and short bursts no longer push the CPU\n  to its top speeds, which cost the most power. Games, benchmarks and\n  app launches still get full speed\n- Faster charging while you use the phone: the thermal profile now\n  matches FKM's \"Dynamic (evaluation)\", so charging isn't held at 1.2 A\n  once the phone gets warm\n- The faster 12 ms scheduler setting now stays on (the perf HAL used to\n  reset it)\nCarried over from 20261108\n- 90 Hz refresh rate, next to 60 and 120 Hz\n- Lighter scroll and animation boosts, cores sleep between frames\n- Real deep sleep (s2idle): the SoC powers down with the screen off\n- zram lz4 with zstd recompression, lmkd no longer kills the launcher\n  under a memory burst\n- Photo and video filters work on the rear and front cameras\n- Audio battery listener off, satellite config log spam removed",
+      "changelog_device": "Battery\n- Smart CPU limits: light work and short bursts no longer push the CPU\n  to its top speeds, which cost the most power. Games, benchmarks and\n  app launches still get full speed\n- The faster 12 ms scheduler setting now stays on (the perf HAL used to\n  reset it)\nCharging\n- Faster charging while you use the phone: the thermal profile now\n  matches FKM's \"Dynamic (evaluation)\", so charging isn't held at 1.2 A\n  once the phone gets warm",
       "datetime": "1794190078",
       "filename": "aospa-calcite-unofficial-redwood-20261109.zip",
       "maintainer": "Suvojeet Sengupta",
