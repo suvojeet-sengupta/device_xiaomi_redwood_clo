@@ -10,3 +10,9 @@ service vendor.mi_thermald /vendor/bin/mi_thermald
     user root
     group system
     seclabel u:r:mi_thermald:s0
+
+# Thermal scene 10, FKM's "Dynamic (evaluation)" (thermal-nolimits). The
+# default scene caps charging at 1.2 A with the screen on from about 36 C;
+# this one limits it far less and leaves the CPUs alone until 51 C.
+on property:sys.boot_completed=1
+    write /sys/class/thermal/thermal_message/sconfig 10
