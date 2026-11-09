@@ -40,7 +40,10 @@ public final class ThermalUtils {
     protected static final int STATE_DIALER = 3;
     protected static final int STATE_GAMING = 4;
 
-    private static final String THERMAL_STATE_DEFAULT = "0";
+    // Apps without a profile get scene 10 (thermal-nolimits, FKM's "Dynamic
+    // (evaluation)"), as at boot: scene 0 caps charging at 1.2 A with the
+    // screen on once the phone is warm
+    private static final String THERMAL_STATE_DEFAULT = "10";
     private static final String THERMAL_STATE_BENCHMARK = "10";
     private static final String THERMAL_STATE_CAMERA = "12";
     private static final String THERMAL_STATE_DIALER = "8";
