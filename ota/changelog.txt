@@ -1,24 +1,17 @@
-Kernel: Suvkernel 3.2 — battery and deep sleep
-- Real deep sleep: the SoC (AOSS, CX rail, DDR) now powers down with the
-  screen off. On deep suspend it never did; the kernel now uses s2idle,
-  which cut idle power a lot
-- RAM: anonymous memory faults in 4K pages again (64K folios caused
-  swap churn on 6 GB); zram runs lz4 for the swap path and recompresses
-  idle pages with zstd, so swap-in/out is faster for the same packing
-- lmkd no longer kills the launcher and apps under a memory burst
-- Wakeup sources the suspend HAL reads are labelled, so their stats and
-  CPU time are accounted
-- Carried over: NFC, Wi-Fi and modem crash recovery, and the Linux
-  6.12.98-116 storage, UFS, dm-verity and PM fixes
-Display
-- 90 Hz refresh rate added, next to 60 and 120 Hz
-Performance and battery
-- Lighter scroll and animation boosts: the CPU no longer jumps to its top
-  clocks on every scroll, and the cores can sleep between frames
-- The scheduler reacts to load in 12 ms instead of 20 ms, so clocks go up
-  faster when needed and come back down sooner
-- Audio battery listener turned off
-Camera
+New in this build
+- Smart CPU limits: light work and short bursts no longer push the CPU
+  to its top speeds, which cost the most power. Games, benchmarks and
+  app launches still get full speed
+- Faster charging while you use the phone: the thermal profile now
+  matches FKM's "Dynamic (evaluation)", so charging isn't held at 1.2 A
+  once the phone gets warm
+- The faster 12 ms scheduler setting now stays on (the perf HAL used to
+  reset it)
+Carried over from 20261108
+- 90 Hz refresh rate, next to 60 and 120 Hz
+- Lighter scroll and animation boosts, cores sleep between frames
+- Real deep sleep (s2idle): the SoC powers down with the screen off
+- zram lz4 with zstd recompression, lmkd no longer kills the launcher
+  under a memory burst
 - Photo and video filters work on the rear and front cameras
-Telephony
-- Stop logging the satellite config lookup (~300 lines a minute)
+- Audio battery listener off, satellite config log spam removed
