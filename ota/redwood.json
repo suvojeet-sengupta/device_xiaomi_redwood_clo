@@ -3,12 +3,12 @@
     {
       "android_spl": "2026-08-05",
       "build_type": "unofficial",
-      "changelog_device": "Battery\n- Smart CPU limits: light work and short bursts no longer push the CPU\n  to its top speeds, which cost the most power. Games, benchmarks and\n  app launches still get full speed\n- The faster 12 ms scheduler setting now stays on (the perf HAL used to\n  reset it)\nCharging\n- Faster charging while you use the phone: the thermal profile now\n  matches FKM's \"Dynamic (evaluation)\", so charging isn't held at 1.2 A\n  once the phone gets warm",
-      "datetime": "1794190078",
+      "changelog_device": "Battery\n- Under light and medium load the CPU now runs much closer to the speed\n  the work needs instead of 25% above it, so everyday use draws less\n  power. Games and heavy apps still ramp to full speed\nCharging\n- The faster charging profile now stays on: the device settings app\n  reset it to the default on every app switch",
+      "datetime": "1794197203",
       "filename": "aospa-calcite-unofficial-redwood-20261109.zip",
       "maintainer": "Suvojeet Sengupta",
-      "recovery_sha256": "96172ee0fa4f9f2c08cd3b97a629123a047a71638a516ea48ccd00126788018f",
-      "size": "2598083505",
+      "recovery_sha256": "2904e8e111842e74500c969d4ab64a54b080547d84ddeb5eb8d4a0e5abca57fb",
+      "size": "2598085758",
       "url": "https://ferrari.serverhive.in/suvojeetsengupta/aospa-calcite-unofficial-redwood-20261109.zip",
       "version": "Calcite",
       "version_code": "20261109"

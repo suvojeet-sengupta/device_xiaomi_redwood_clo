@@ -1,10 +1,7 @@
 Battery
-- Smart CPU limits: light work and short bursts no longer push the CPU
-  to its top speeds, which cost the most power. Games, benchmarks and
-  app launches still get full speed
-- The faster 12 ms scheduler setting now stays on (the perf HAL used to
-  reset it)
+- Under light and medium load the CPU now runs much closer to the speed
+  the work needs instead of 25% above it, so everyday use draws less
+  power. Games and heavy apps still ramp to full speed
 Charging
-- Faster charging while you use the phone: the thermal profile now
-  matches FKM's "Dynamic (evaluation)", so charging isn't held at 1.2 A
-  once the phone gets warm
+- The faster charging profile now stays on: the device settings app
+  reset it to the default on every app switch
