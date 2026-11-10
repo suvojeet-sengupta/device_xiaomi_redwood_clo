@@ -110,8 +110,11 @@ function configure_memory_parameters() {
 
 	# mmd sets zram up on boot_completed (mmd.zram.* in system.prop): lz4
 	# for the swap path and zstd recompression of idle pages. Only set it
-	# up here if mmd won't.
-	if [ "`getprop mmd.zram.enabled`" != "true" ]; then
+	# up here before Android 16, which has no mmd. Don't go by
+	# mmd.zram.enabled: on PenguinOS mmd --set-property sets it after this
+	# runs, zram ended up zstd-only from here and mmd_setup aborted on the
+	# busy device.
+	if [ "`getprop ro.build.version.sdk`" -lt 36 ]; then
 		configure_zram_parameters
 	fi
 	configure_read_ahead_kb_values
