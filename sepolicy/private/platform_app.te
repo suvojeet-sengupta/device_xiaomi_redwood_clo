@@ -1,0 +1,2 @@
+# SystemUI reads the LE Audio profile properties for the Bluetooth tile
+get_prop(platform_app, bluetooth_lea_prop)
