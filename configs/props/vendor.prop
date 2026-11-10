@@ -192,6 +192,7 @@ debug.sdm.support_writeback=0
 debug.stagefright.c2inputsurface=-1
 media.stagefright.thumbnail.prefer_hw_codecs=true
 ro.config.vc_call_vol_steps=11
+ro.vendor.audio.voice.dsp_vol_steps=5
 
 # NFC
 ro.vendor.nfc.repair=1
