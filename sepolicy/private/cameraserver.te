@@ -1,0 +1,1 @@
+dontaudit cameraserver vendor_sys_gpp_prop:file { read open getattr map };
