@@ -249,12 +249,11 @@ $(call soong_config_set,lineage_health,charging_control_charging_enabled,0)
 $(call soong_config_set,lineage_health,charging_control_charging_path,/sys/class/qcom-battery/input_suspend)
 $(call soong_config_set_bool,lineage_health,charging_control_supports_bypass,true)
 
-# HotwordEnrollment is intentionally not installed: the DSP always-on "Hey
-# Google" keyphrase path can leave the LSM session stuck after the audio HAL
-# is disturbed, and the hotword then reloads the model every few seconds,
-# taking audioserver down on each try (a 3s-play/3s-stall loop for media).
-# Without the enrollment permission Google uses the software hotword only, so
-# the Assistant still works from the button/app and media playback is safe.
+# Hotword enrollment: the vendor blobs install Y Google ("Hey Google") and
+# X Google, and AOSPA's privapp-permissions-hotword.xml grants them the
+# keyphrase enrollment permissions, so the DSP always-on hotword is on.
+# If media starts to play 3 s and stall 3 s with audioserver restarting,
+# the LSM session is stuck and the hotword keeps reloading its model.
 
 # Init scripts
 PRODUCT_COPY_FILES += \
