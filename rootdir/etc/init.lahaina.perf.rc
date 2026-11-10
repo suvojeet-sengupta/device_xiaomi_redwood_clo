@@ -50,9 +50,6 @@ on property:vendor.post_boot.parsed=1
     # Disable multiple kswapd threads
     write /proc/sys/vm/kswapd_threads 1
 
-    # Enable suspend to RAM
-    write /sys/power/mem_sleep "deep"
-
     # Dynamically set IRQ affinity for KGSL and DRM
     exec u:r:vendor_qti_init_shell:s0 -- /vendor/bin/init.lahaina.perf.sh
 
