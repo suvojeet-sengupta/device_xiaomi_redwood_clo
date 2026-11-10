@@ -1,7 +1,13 @@
 Battery
-- Under light and medium load the CPU now runs much closer to the speed
-  the work needs instead of 25% above it, so everyday use draws less
-  power. Games and heavy apps still ramp to full speed
-Charging
-- The faster charging profile now stays on: the device settings app
-  reset it to the default on every app switch
+- Deep sleep works again: a Bluetooth wakelock kept the phone awake, so
+  screen-off drain is now close to zero
+- Battery apps show the charging current as positive and can read the
+  average current
+Hey Google
+- "Hey Google" and Voice Match training work. Voice wakeup used to crash
+  the audio service in a loop
+Display
+- Smoother switching between 60, 90 and 120 Hz
+- Display color modes apply correctly again
+Camera
+- The flash fires reliably

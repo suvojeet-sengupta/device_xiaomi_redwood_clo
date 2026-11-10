@@ -3,15 +3,15 @@
     {
       "android_spl": "2026-08-05",
       "build_type": "unofficial",
-      "changelog_device": "Battery\n- Under light and medium load the CPU now runs much closer to the speed\n  the work needs instead of 25% above it, so everyday use draws less\n  power. Games and heavy apps still ramp to full speed\nCharging\n- The faster charging profile now stays on: the device settings app\n  reset it to the default on every app switch",
-      "datetime": "1794197203",
-      "filename": "aospa-calcite-unofficial-redwood-20261109.zip",
+      "changelog_device": "Battery\n- Deep sleep works again: a Bluetooth wakelock kept the phone awake, so\n  screen-off drain is now close to zero\n- Battery apps show the charging current as positive and can read the\n  average current\nHey Google\n- \"Hey Google\" and Voice Match training work. Voice wakeup used to crash\n  the audio service in a loop\nDisplay\n- Smoother switching between 60, 90 and 120 Hz\n- Display color modes apply correctly again\nCamera\n- The flash fires reliably",
+      "datetime": "1794303787",
+      "filename": "aospa-calcite-unofficial-redwood-20261110.zip",
       "maintainer": "Suvojeet Sengupta",
-      "recovery_sha256": "2904e8e111842e74500c969d4ab64a54b080547d84ddeb5eb8d4a0e5abca57fb",
-      "size": "2598085758",
-      "url": "https://ferrari.serverhive.in/suvojeetsengupta/aospa-calcite-unofficial-redwood-20261109.zip",
+      "recovery_sha256": "28842ed5213347ea817f15348829c26216cd4a523ec2cf95f5e3eb7a109b883d",
+      "size": "2597601537",
+      "url": "https://ferrari.serverhive.in/suvojeetsengupta/aospa-calcite-unofficial-redwood-20261110.zip",
       "version": "Calcite",
-      "version_code": "20261109"
+      "version_code": "20261110"
     }
   ]
 }
