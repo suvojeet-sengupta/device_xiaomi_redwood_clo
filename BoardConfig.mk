@@ -6,7 +6,7 @@
 #
 
 DEVICE_PATH := device/xiaomi/redwood
-KERNEL_PATH := device/xiaomi/redwood-kernel-6.12
+KERNEL_PATH := device/xiaomi/redwood-kernel-6.18
 
 BOARD_VENDOR := xiaomi
 
@@ -97,7 +97,8 @@ BOARD_KERNEL_CMDLINE += androidboot.init_fatal_reboot_target=recovery
 # 6.12 turns unused clocks and power domains off before the display driver
 # takes over the bootloader's splash, which kills the panel
 BOARD_KERNEL_CMDLINE += clk_ignore_unused pd_ignore_unused
-BOARD_KERNEL_CMDLINE += binder.impl=rust
+BOARD_KERNEL_CMDLINE += binder.impl=c
+BOARD_KERNEL_CMDLINE += iommu.strict=1
 
 # Kernel - Prebuilt
 TARGET_PREBUILT_KERNEL := $(KERNEL_PATH)/Image
