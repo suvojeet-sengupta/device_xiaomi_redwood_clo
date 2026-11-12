@@ -28,9 +28,6 @@ git clone -b 6.18-setup https://github.com/suvojeet-sengupta/device_xiaomi_redwo
   isn't set up for 6.18, and it never writes an OTA feed, so phones on the
   6.12 or 5.4 ROM aren't offered a 6.18 build.
 
-The kernel prebuilt repository is private for now: log in with `gh` (or set
-up git credentials for github.com) before `setup.sh` syncs it.
-
 Before flashing: 6.18 uses the same `/data` as the ROM on the other slot.
 Back up your data first. If 6.18 doesn't boot, go back with
 `fastboot --set-active=<the other slot>`. What works on 6.18 is tracked in
