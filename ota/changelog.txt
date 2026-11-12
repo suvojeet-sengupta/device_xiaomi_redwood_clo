@@ -9,6 +9,9 @@ Root
 
 Camera
 - Video recording works; the encoder no longer stalls on the first frame
+- 1080p 60 fps video no longer freezes the camera
+- Night mode no longer crashes after the shot, also with root modules
+  that edit the camera app list
 
 Mobile data and network
 - Mobile data and IMS work on 6.18
@@ -16,5 +19,11 @@ Mobile data and network
 - Apps can no longer read the Wi-Fi MAC address or the neighbour table
   over netlink
 
+Battery
+- A boot logger left over from bring-up no longer wakes the CPU every
+  second
+
 Under the hood
+- The USB HAL can read the USB connection speed
+- MIUI Camera no longer fills the log with SELinux denials
 - The vendor drivers drop the code paths for older kernels
