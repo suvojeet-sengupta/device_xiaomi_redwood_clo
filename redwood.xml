@@ -9,10 +9,10 @@
   <project path="vendor/qcom/opensource/thermal-hal" name="AOSPA/android_hardware_qcom_thermal" remote="aospa" revision="calcite-legacy" />
 
   <!-- redwood -->
-  <project path="device/xiaomi/redwood" name="suvojeet-sengupta/device_xiaomi_redwood_clo" remote="github" revision="clo-6.12" />
+  <project path="device/xiaomi/redwood" name="suvojeet-sengupta/device_xiaomi_redwood_clo" remote="github" revision="6.18" />
   <project path="device/xiaomi/redwood-patches" name="suvojeet-sengupta/device_xiaomi_redwood-patches" remote="github" revision="clo-6.12" />
-  <!-- 6.12.97-Suvkernel, CLO KERNEL.PLATFORM.5.0 -->
-  <project path="device/xiaomi/redwood-kernel-6.12" name="suvojeet-sengupta/device_xiaomi_redwood-kernel-6.12" remote="github" revision="main" clone-depth="1" />
+  <!-- 6.18.33-Suvkernel, ACK android17-6.18 + the lahaina platform -->
+  <project path="device/xiaomi/redwood-kernel-6.18" name="suvojeet-sengupta/device_xiaomi_redwood-kernel-6.18" remote="github" revision="main" clone-depth="1" />
   <project path="vendor/xiaomi/redwood" name="suvojeet-sengupta/vendor_xiaomi_redwood" remote="github" revision="clo" clone-depth="1" />
   <project path="vendor/xiaomi/redwood-miuicamera" name="genie1997/redwood_miuicamera" remote="github" revision="seventeen" clone-depth="1" />
   <project path="packages/apps/ParanoidSense" name="AOSPA/android_packages_apps_ParanoidSense" remote="aospa" revision="calcite" />
