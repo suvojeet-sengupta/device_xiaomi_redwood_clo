@@ -29,11 +29,15 @@ This tree builds Paranoid Android `calcite` (Android 17) and PenguinOS
 
 ## What's in the tree
 
-- Kernel: prebuilt 6.12.96-Suvkernel (Qualcomm KERNEL.PLATFORM.5.0 with AOSP
-  android16-6.12), from
-  `device/xiaomi/redwood-kernel-6.12`, with every module in the vendor
-  ramdisk. Source: [redwood-6.12-kernel](https://github.com/suvojeet-sengupta/redwood-6.12-kernel)
-  (`main`). The 5.4 ROM is the `clo` branch.
+- Kernel: prebuilt 6.18.33-Suvkernel (Android Common Kernel
+  android17-6.18 with Qualcomm's lahaina platform carried over from 6.12),
+  from [device_xiaomi_redwood-kernel-6.18](https://github.com/suvojeet-sengupta/device_xiaomi_redwood-kernel-6.18)
+  in `device/xiaomi/redwood-kernel-6.18`, with every module in the vendor
+  ramdisk. Source: [redwood-6.18-kernel](https://github.com/suvojeet-sengupta/redwood-6.18-kernel)
+  and [redwood-6.18-modules](https://github.com/suvojeet-sengupta/redwood-6.18-modules)
+  (`main`); what works is tracked in
+  [redwood-6.18-devicetrees](https://github.com/suvojeet-sengupta/redwood-6.18-devicetrees).
+  The 6.12 ROM is the `clo-6.12` branch, the 5.4 ROM the `clo` branch.
 - Vendor: extracted from stock HyperOS, in `vendor/xiaomi/redwood`
 - Camera: stock MIUI Camera, from [genie1997/redwood_miuicamera](https://github.com/genie1997/redwood_miuicamera) (`seventeen` branch) in `vendor/xiaomi/redwood-miuicamera`
 - Audio: Dolby Atmos, from `hardware/dolby`
@@ -51,22 +55,24 @@ This tree builds Paranoid Android `calcite` (Android 17) and PenguinOS
 
 You need a synced Paranoid Android `calcite` tree. The setup and build
 scripts for this branch are in
-[`clo-6.12-setup`](https://github.com/suvojeet-sengupta/device_xiaomi_redwood_clo/tree/clo-6.12-setup).
+[`6.18-setup`](https://github.com/suvojeet-sengupta/device_xiaomi_redwood_clo/tree/6.18-setup).
 Run these from the root of the tree:
 
 ```bash
-git clone -b clo-6.12-setup https://github.com/suvojeet-sengupta/device_xiaomi_redwood_clo.git ~/redwood-6.12-setup
-~/redwood-6.12-setup/setup.sh
-~/redwood-6.12-setup/build.sh
+git clone -b 6.18-setup https://github.com/suvojeet-sengupta/device_xiaomi_redwood_clo.git ~/redwood-6.18-setup
+~/redwood-6.18-setup/setup.sh
+~/redwood-6.18-setup/build.sh
 ```
 
-`setup.sh` adds the redwood local manifest (this branch and the 6.12 kernel
+`setup.sh` adds the redwood local manifest (this branch and the 6.18 kernel
 prebuilt), syncs the redwood repos and clones the signing keys into `~/keys`.
 `build.sh` builds a ROM signed with those keys; the flashable zip ends up in
-the tree root, and boot, vendor_boot and dtbo in `images/`. 6.12 builds
-stay out of the OTA feed.
+the tree root, and boot, vendor_boot and dtbo in `images/`. 6.18 builds
+never write an OTA feed. For the 6.12 ROM use
+[`clo-6.12-setup`](https://github.com/suvojeet-sengupta/device_xiaomi_redwood_clo/tree/clo-6.12-setup)
+instead.
 
-6.12 shares `/data` with the 5.4 ROM on the other slot: back up before
+6.18 shares `/data` with the ROM on the other slot: back up before
 flashing, and go back with `fastboot --set-active` if it doesn't boot.
 
 Keep a copy of your keys off the build machine: a build signed with other
