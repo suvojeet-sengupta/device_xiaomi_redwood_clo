@@ -287,7 +287,7 @@ PRODUCT_COPY_FILES += \
 PRODUCT_ENABLE_UFFD_GC := true
 PRODUCT_OTA_ENFORCE_VINTF_KERNEL_REQUIREMENTS := false
 PRODUCT_COPY_FILES += \
-    device/xiaomi/redwood-kernel-6.12/Image:kernel
+    device/xiaomi/redwood-kernel-6.18/Image:kernel
 
 # Media
 PRODUCT_COPY_FILES += \
