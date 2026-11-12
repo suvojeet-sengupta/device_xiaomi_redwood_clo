@@ -1,53 +1,20 @@
-Kernel: Suvkernel 3.3 (6.12.97)
+Kernel: Suvkernel 6.18 (6.18.33, Android Common Kernel android17-6.18)
 
-Battery and deep sleep
-- Deep sleep with Bluetooth on: the Bluetooth serial port kept a wake
-  vote whenever a transfer didn't start, so with a device connected the
-  phone stayed awake for hours. Screen-off drain is now close to zero
-- The kernel no longer gets asked for the "deep" suspend mode at boot;
-  redwood sleeps with s2idle, the only mode that reaches full SoC and
-  memory sleep on 6.12
-- Battery apps (FKM, AccuBattery and others) now show the current with
-  the right sign: positive while charging, negative on battery
-- The average battery current can be read again: the charger firmware
-  has no average, so the kernel reports the live current for it
-- The wireless charging temperature sensor no longer fails at boot
+This is the first build on the 6.18 kernel. Flash it once from recovery;
+later 6.18 builds come over the air.
 
-Performance and smoothness
-- Scrolling has more CPU headroom: the light-load speed limits now
-  target 90% load up to the mid clocks and 85% up to the cap, instead
-  of 95% and 90%, so scrolls stop missing frames
-- Touch boosts the big cores to 1.23 GHz for 120 ms, the cores the UI
-  usually runs on; the prime core stays unboosted to save power
-
-Display
-- Adaptive refresh rate is the default: a static screen drops to
-  60 Hz, touch goes to 120 Hz, and videos or games that ask for 90 Hz
-  get it, all without flicker
-- 120 Hz now holds for 300 ms after a touch, so a fling doesn't drop
-  mid-way, and the 3 s hold at 120 Hz after every frame is gone
-- Display color modes work again: their color tables were rejected by
-  the kernel and never reached the panel
-
-Hey Google
-- "Hey Google" and Voice Match training work. The voice wakeup path
-  couldn't reach the audio driver, so the model never loaded and the
-  audio service crashed and restarted in a loop
-- Added the "Y Google" enrollment app the current Google app needs for
-  Hey Google
+Root
+- KernelSU Next patches the boot image with its own android17-6.18
+  module (Install > select the boot image > KMI android17-6.18)
 
 Camera
-- The flash fires reliably: the camera could not tell the thermal
-  service when the flash was on
+- Video recording works; the encoder no longer stalls on the first frame
 
-Audio
-- The speaker amplifiers no longer fill the kernel log during playback
-
-Memory
-- zram is set up only by Android's memory daemon on Android 16, which
-  fixes a boot-time race on PenguinOS that left a slow zram setup and a
-  crash on every boot
+Mobile data and network
+- Mobile data and IMS work on 6.18
+- The modem name server starts once instead of restarting every 5 seconds
+- Apps can no longer read the Wi-Fi MAC address or the neighbour table
+  over netlink
 
 Under the hood
-- The remaining harmless SELinux denials are silenced
-- The camera driver source now ships inside the kernel tree
+- The vendor drivers drop the code paths for older kernels

@@ -2,13 +2,14 @@
 
 Unofficial redwood builds update through ParanoidHub (Settings > System >
 System update) like official ones. `ParanoidHubOverlayRedwood` points it at
-[`redwood.json`](redwood.json) here on the `clo-6.12` branch, and the
+[`redwood.json`](redwood.json) here on the `6.18` branch, and the
 `UnofficialOta` feature patch shows the maintainer on the update screen.
 
-6.12 builds have their own feed, apart from the 5.4 builds whose feed is on
-the `clo` branch: a phone on 6.12 is only offered 6.12 builds, and a phone on
-5.4 never gets one. To move a phone from 5.4 to 6.12, flash a 6.12 build from
-recovery once; it updates over the air after that.
+6.18 builds have their own feed, apart from the 6.12 builds (feed on the
+`clo-6.12` branch) and the 5.4 builds (feed on `clo`): a phone on 6.18 is
+only offered 6.18 builds, and a phone on 6.12 or 5.4 never gets one. To move
+a phone to 6.18, flash a 6.18 build from recovery once; it updates over the
+air after that.
 
 ParanoidHub offers a build when its `build_type` matches the phone's
 `ro.aospa.build.variant` (`unofficial`) and its `datetime` is newer than the
@@ -17,7 +18,7 @@ is all a release needs.
 
 ## Releasing a build
 
-1. Build with `~/redwood-6.12-setup/build.sh`. It runs `make-feed.sh` at the end,
+1. Build with `~/redwood-6.18-setup/build.sh`. It runs `make-feed.sh` at the end,
    which rewrites `ota/redwood.json` in the device tree. To do it by hand:
 
    ```bash
@@ -26,10 +27,18 @@ is all a release needs.
 
    Put the changes in `ota/changelog.txt` before running it; it goes into
    the feed as the changelog ParanoidHub shows.
-2. Upload the zip as an asset of a `redwood-6.12-<date>` release of this repo.
-   GitHub takes assets up to 2 GiB; for a bigger zip, host it elsewhere and
-   pass its direct download url as the second argument of `make-feed.sh`.
-3. Commit `ota/redwood.json` and push `clo-6.12`. Phones see the build on their
+2. Upload the zip where `make-feed.sh` said: as an asset of a
+   `redwood-6.18-<date>` release of this repo, or, over 2 GiB (the usual
+   case), to `AOSPA/redwood-6.18/<date>/` of the `builds-by-suvojeet`
+   SourceForge project. To host it anywhere else, pass its direct download
+   url as the second argument of `make-feed.sh`.
+
+   Before you push the feed, check over adb that a phone runs this exact
+   build (`ro.build.date.utc` equals the feed's `datetime`) and that the url
+   downloads the zip. `make-feed.sh` refuses a tree without the 6.18 kernel
+   and a build that isn't newer than the one in the feed; an incremental
+   build keeps the old build date, so build releases with `-i`.
+3. Commit `ota/redwood.json` and push `6.18`. Phones see the build on their
    next check, or when you tap "Check for update".
 
 To pull a broken build, revert that commit. A feed with an empty `updates`
