@@ -99,6 +99,12 @@ BOARD_KERNEL_CMDLINE += androidboot.init_fatal_reboot_target=recovery
 BOARD_KERNEL_CMDLINE += clk_ignore_unused pd_ignore_unused
 BOARD_KERNEL_CMDLINE += binder.impl=rust
 BOARD_KERNEL_CMDLINE += iommu.strict=1
+# Wait for every deferred probe: the vendor modules come up in an order
+# 6.18 would otherwise give up on
+BOARD_KERNEL_CMDLINE += deferred_probe_timeout=-1
+# 6.18 checks netlink messages against allowxperm rules the 6.12-era vendor
+# policy doesn't have; fall back to nlmsg_read/nlmsg_write for those
+BOARD_KERNEL_CMDLINE += redwood.nlmsg_legacy
 
 # Kernel - Prebuilt
 TARGET_PREBUILT_KERNEL := $(KERNEL_PATH)/Image
@@ -108,8 +114,7 @@ BOARD_PREBUILT_DTBIMAGE_DIR := $(KERNEL_PATH)/dtb
 BOARD_MKBOOTIMG_ARGS += --dtb $(BOARD_PREBUILT_DTBIMAGE_DIR)/01_dtbdump_Qualcomm_Technologies,_Inc._Yupik_SoC.dtb
 
 # Kernel - Modules: all of them go in the vendor ramdisk, loaded by first
-# stage init in the prebuilt's order. Keep them unstripped here: the GKI
-# modules Wi-Fi and Bluetooth need only load with their signatures.
+# stage init in the prebuilt's order (its modules are already stripped).
 BOARD_VENDOR_RAMDISK_KERNEL_MODULES := $(wildcard $(KERNEL_PATH)/vendor_ramdisk/*.ko)
 BOARD_VENDOR_RAMDISK_KERNEL_MODULES_LOAD := $(strip $(shell cat $(KERNEL_PATH)/vendor_ramdisk/modules.load))
 BOARD_DO_NOT_STRIP_VENDOR_RAMDISK_MODULES := true
