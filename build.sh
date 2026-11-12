@@ -3,12 +3,16 @@
 # Build a signed Paranoid Android for redwood with the 6.18 kernel.
 #
 # Run it from the root of the AOSPA or PenguinOS tree, after setup.sh:
-#   ~/redwood-6.18-setup/build.sh
+#   ~/redwood-6.18-setup/build.sh [-i]
 #
 # The flashable zip ends up in the tree root, boot, vendor_boot and dtbo for
-# fastboot in images/. It never writes an OTA feed: 6.18 builds are tests,
-# and no phone on the 6.12 or 5.4 ROM must be offered one. Set KEYS_DIR to
-# sign with other keys.
+# fastboot in images/, and the OTA feed in device/xiaomi/redwood/ota. 6.18
+# builds have their own feed on the 6.18 branch, so phones on the 6.12 or
+# 5.4 ROM are never offered one. -i runs an installclean first: use it for
+# every build you publish, since an incremental build keeps the old build
+# date and phones wouldn't be offered it. Set KEYS_DIR to sign with other
+# keys, and OTA_URL when the zip won't be where make-feed.sh expects it (see
+# device/xiaomi/redwood/ota/README.md).
 
 set -euo pipefail
 
@@ -30,7 +34,10 @@ if [ -f .repo/manifests/penguin.xml ] || [ -d vendor/custom-preference ] ||
     variant=(-v official)
 fi
 
-./rom-build.sh redwood -t user "${variant[@]}" -s "$KEYS_DIR"
+clean=()
+[ "${1:-}" = "-i" ] && clean=(-i)
+
+./rom-build.sh redwood -t user "${variant[@]}" "${clean[@]}" -s "$KEYS_DIR"
 
 tf=$(ls -t ./*redwood*-signed-target_files.zip 2>/dev/null | head -n 1)
 [ -n "$tf" ] || die "no signed target files, the build failed"
@@ -39,6 +46,10 @@ zip=${tf%-signed-target_files.zip}.zip
 mkdir -p images
 unzip -o -j -q "$tf" IMAGES/boot.img IMAGES/vendor_boot.img IMAGES/dtbo.img -d images
 
+feed=device/xiaomi/redwood/ota/make-feed.sh
+if [ -x "$feed" ]; then
+	"$feed" "$zip" ${OTA_URL:+"$OTA_URL"} || echo "build: no OTA feed, see above"
+fi
 
 echo
 echo "Kernel: $(sed -n 's/^release=//p' device/xiaomi/redwood-kernel-6.18/build-info.txt)"

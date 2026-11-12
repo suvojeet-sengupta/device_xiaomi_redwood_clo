@@ -24,9 +24,13 @@ git clone -b 6.18-setup https://github.com/suvojeet-sengupta/device_xiaomi_redwo
   repos, clones the signing keys into `~/keys` and checks that the tree
   really builds 6.18.
 - `build.sh` builds a signed ROM. The flashable zip ends up in the tree
-  root, and boot, vendor_boot and dtbo in `images/`. It refuses a tree that
-  isn't set up for 6.18, and it never writes an OTA feed, so phones on the
-  6.12 or 5.4 ROM aren't offered a 6.18 build.
+  root, boot, vendor_boot and dtbo in `images/`, and the OTA feed in
+  `device/xiaomi/redwood/ota`. It refuses a tree that isn't set up for 6.18.
+  6.18 builds have their own feed on the `6.18` branch, so phones on the
+  6.12 or 5.4 ROM are never offered one. Build releases with
+  `build.sh -i`: an incremental build keeps the old build date, and phones
+  only get a build newer than theirs. Publishing is in the device tree's
+  [`ota/README.md`](https://github.com/suvojeet-sengupta/device_xiaomi_redwood_clo/blob/6.18/ota/README.md).
 
 Before flashing: 6.18 uses the same `/data` as the ROM on the other slot.
 Back up your data first. If 6.18 doesn't boot, go back with
