@@ -3,12 +3,12 @@
     {
       "android_spl": "2026-08-05",
       "build_type": "unofficial",
-      "changelog_device": "Kernel: Suvkernel 6.18 (6.18.33, Android Common Kernel android17-6.18)\n\nComing from a 6.12 build: flash this once from recovery. From the\n20261112 6.18 build it comes over the air.\n\nAfter the update, boot once without root before patching the boot image\nagain, and re-enable root modules one at a time.\n\nRoot\n- KernelSU, KernelSU Next and KowSU all patch the boot image with their\n  own android17-6.18 module (Install > select the boot image > KMI\n  android17-6.18). KowSU needs kernel BTF, which this kernel has again\n\nBattery and deep sleep\n- The phone reaches deep sleep again with the screen off: the CPU\n  cluster power domain, its suppliers and the bus votes now drop\n- IPA (mobile data) no longer keeps the phone awake: its interrupt is\n  level triggered and a stuck TAG command no longer blocks clock gating\n- Drivers that never probe release their suppliers after 30 seconds,\n  so their power domains can turn off\n\nDisplay\n- New 100 Hz and 110 Hz refresh rates, in the Refresh Rate quick tile\n  and in Refresh rate per-app\n- Apps that already had 60, 90 or 120 Hz per-app keep their setting",
-      "datetime": "1794557610",
+      "changelog_device": "Kernel: Suvkernel 6.18 (6.18.33, Android Common Kernel android17-6.18)\n\nComing from a 6.12 build: flash this once from recovery. From the\n20261112 or an earlier 20261113 6.18 build it comes over the air.\n\nAfter the update, boot once without root before patching the boot image\nagain, and re-enable root modules one at a time.\n\nRoot\n- KernelSU, KernelSU Next and KowSU all patch the boot image with their\n  own android17-6.18 module (Install > select the boot image > KMI\n  android17-6.18). KowSU needs kernel BTF, which this kernel has again\n\nBluetooth\n- With a headset connected, incoming calls ring on the phone and the\n  headset again instead of only vibrating\n\nUSB\n- Plugging into a PC no longer connects, drops once and reconnects;\n  charging no longer stalls for a few seconds on plug-in\n\nBattery and deep sleep\n- The phone reaches deep sleep again with the screen off: the CPU\n  cluster power domain, its suppliers and the bus votes now drop\n- IPA (mobile data) no longer keeps the phone awake: its interrupt is\n  level triggered and a stuck TAG command no longer blocks clock gating\n- Drivers that never probe release their suppliers after 30 seconds,\n  so their power domains can turn off\n\nDisplay\n- New 100 Hz and 110 Hz refresh rates, in the Refresh Rate quick tile\n  and in Refresh rate per-app\n- Apps that already had 60, 90 or 120 Hz per-app keep their setting",
+      "datetime": "1794584285",
       "filename": "aospa-calcite-unofficial-redwood-20261113.zip",
       "maintainer": "Suvojeet Sengupta",
-      "recovery_sha256": "98f4448362bd63fce3f1822a0a424b8e9d08aa055d306e2b49ac016cbe578a9f",
-      "size": "2582617787",
+      "recovery_sha256": "3706d9195efc464ed918e50e0d2ebb439e64ae48cd9eb446af5e970f419a9ebe",
+      "size": "2582606336",
       "url": "https://ferrari.serverhive.in/suvojeetsengupta1/aospa-calcite-unofficial-redwood-20261113.zip",
       "version": "Calcite",
       "version_code": "20261113"
