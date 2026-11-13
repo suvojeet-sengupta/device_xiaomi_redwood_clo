@@ -1,29 +1,17 @@
 Kernel: Suvkernel 6.18 (6.18.33, Android Common Kernel android17-6.18)
 
-This is the first build on the 6.18 kernel. Flash it once from recovery;
-later 6.18 builds come over the air.
+Coming from a 6.12 build: flash this once from recovery. From the
+20261112 6.18 build it comes over the air.
 
-Root
-- KernelSU Next patches the boot image with its own android17-6.18
-  module (Install > select the boot image > KMI android17-6.18)
+Battery and deep sleep
+- The phone reaches deep sleep again with the screen off: the CPU
+  cluster power domain, its suppliers and the bus votes now drop
+- IPA (mobile data) no longer keeps the phone awake: its interrupt is
+  level triggered and a stuck TAG command no longer blocks clock gating
+- Drivers that never probe release their suppliers after 30 seconds,
+  so their power domains can turn off
 
-Camera
-- Video recording works; the encoder no longer stalls on the first frame
-- 1080p 60 fps video no longer freezes the camera
-- Night mode no longer crashes after the shot, also with root modules
-  that edit the camera app list
-
-Mobile data and network
-- Mobile data and IMS work on 6.18
-- The modem name server starts once instead of restarting every 5 seconds
-- Apps can no longer read the Wi-Fi MAC address or the neighbour table
-  over netlink
-
-Battery
-- A boot logger left over from bring-up no longer wakes the CPU every
-  second
-
-Under the hood
-- The USB HAL can read the USB connection speed
-- MIUI Camera no longer fills the log with SELinux denials
-- The vendor drivers drop the code paths for older kernels
+Display
+- New 100 Hz and 110 Hz refresh rates, in the Refresh Rate quick tile
+  and in Refresh rate per-app
+- Apps that already had 60, 90 or 120 Hz per-app keep their setting

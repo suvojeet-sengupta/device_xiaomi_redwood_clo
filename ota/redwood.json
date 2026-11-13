@@ -3,15 +3,15 @@
     {
       "android_spl": "2026-08-05",
       "build_type": "unofficial",
-      "changelog_device": "Kernel: Suvkernel 6.18 (6.18.33, Android Common Kernel android17-6.18)\n\nThis is the first build on the 6.18 kernel. Flash it once from recovery;\nlater 6.18 builds come over the air.\n\nRoot\n- KernelSU Next patches the boot image with its own android17-6.18\n  module (Install > select the boot image > KMI android17-6.18)\n\nCamera\n- Video recording works; the encoder no longer stalls on the first frame\n- 1080p 60 fps video no longer freezes the camera\n- Night mode no longer crashes after the shot, also with root modules\n  that edit the camera app list\n\nMobile data and network\n- Mobile data and IMS work on 6.18\n- The modem name server starts once instead of restarting every 5 seconds\n- Apps can no longer read the Wi-Fi MAC address or the neighbour table\n  over netlink\n\nBattery\n- A boot logger left over from bring-up no longer wakes the CPU every\n  second\n\nUnder the hood\n- The USB HAL can read the USB connection speed\n- MIUI Camera no longer fills the log with SELinux denials\n- The vendor drivers drop the code paths for older kernels",
-      "datetime": "1794513473",
-      "filename": "aospa-calcite-unofficial-redwood-20261112.zip",
+      "changelog_device": "Kernel: Suvkernel 6.18 (6.18.33, Android Common Kernel android17-6.18)\n\nComing from a 6.12 build: flash this once from recovery. From the\n20261112 6.18 build it comes over the air.\n\nBattery and deep sleep\n- The phone reaches deep sleep again with the screen off: the CPU\n  cluster power domain, its suppliers and the bus votes now drop\n- IPA (mobile data) no longer keeps the phone awake: its interrupt is\n  level triggered and a stuck TAG command no longer blocks clock gating\n- Drivers that never probe release their suppliers after 30 seconds,\n  so their power domains can turn off\n\nDisplay\n- New 100 Hz and 110 Hz refresh rates, in the Refresh Rate quick tile\n  and in Refresh rate per-app\n- Apps that already had 60, 90 or 120 Hz per-app keep their setting",
+      "datetime": "1794557610",
+      "filename": "aospa-calcite-unofficial-redwood-20261113.zip",
       "maintainer": "Suvojeet Sengupta",
-      "recovery_sha256": "b6bdb968cfafb0b967dc14123d34132543d1ae222db55e3ea2360875c9ef3298",
-      "size": "2580907393",
-      "url": "https://ferrari.serverhive.in/suvojeetsengupta1/aospa-calcite-unofficial-redwood-20261112.zip",
+      "recovery_sha256": "b3a6354218643e9e397e02e6103f00f5eaa7c213321ebab98ff1a645fd4e4b4f",
+      "size": "2580908463",
+      "url": "https://ferrari.serverhive.in/suvojeetsengupta1/aospa-calcite-unofficial-redwood-20261113.zip",
       "version": "Calcite",
-      "version_code": "20261112"
+      "version_code": "20261113"
     }
   ]
 }
