@@ -5,6 +5,11 @@ audio.offload.min.duration.secs=30
 audio.offload.video=true
 ro.af.client_heap_size_kbyte=7168
 
+# Bluetooth: temporary until the in-band ringtone route is fixed. With SCO
+# open for in-band ringing, the ringtone is routed to the suspended A2DP
+# output and the HAL drops it, so calls only vibrate.
+persist.bluetooth.disableinbandringing=true
+
 # Disable RescueParty due to high risk of data loss
 persist.sys.disable_rescue=true
 
