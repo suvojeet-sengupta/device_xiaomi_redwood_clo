@@ -37,16 +37,16 @@ public final class RefreshUtils {
     protected static final int STATE_DEFAULT = 0;
     protected static final int STATE_MEDIUM = 1;
     protected static final int STATE_HIGH = 2;
-    protected static final int STATE_EXTREME = 3;
+    protected static final int STATE_100 = 3;
+    protected static final int STATE_110 = 4;
+    protected static final int STATE_EXTREME = 5;
 
     private static final float REFRESH_STATE_DEFAULT = 120f;
-    private static final float REFRESH_STATE_MEDIUM = 60f;
-    private static final float REFRESH_STATE_HIGH = 90f;
-    private static final float REFRESH_STATE_EXTREME = 120f;
-
-    private static final String REFRESH_MEDIUM = "refresh.medium";
-    private static final String REFRESH_HIGH = "refresh.high=";
-    private static final String REFRESH_EXTREME = "refresh.extreme=";
+    private static final float[] STATE_RATE = { 0f, 60f, 90f, 100f, 110f, 120f };
+    private static final int[] STATE_FIELD = { -1, 0, 1, 3, 4, 2 };
+    private static final String[] FIELD_KEY = {
+            "refresh.medium", "refresh.high=", "refresh.extreme=", "refresh.100=", "refresh.110="
+    };
 
     private static boolean isAppInList = false;
     private static float defaultMaxRate;
@@ -88,51 +88,38 @@ public final class RefreshUtils {
         mSharedPrefs.edit().putString(REFRESH_CONTROL, profiles).apply();
     }
 
-    private String getValue() {
+    private String[] getModes() {
         String value = mSharedPrefs.getString(REFRESH_CONTROL, null);
-
-        if (value == null || value.isEmpty()) {
-            value = REFRESH_MEDIUM + ":" + REFRESH_HIGH + ":" + REFRESH_EXTREME;
-            writeValue(value);
+        String[] stored = (value == null || value.isEmpty()) ? new String[0] : value.split(":");
+        String[] modes = new String[FIELD_KEY.length];
+        for (int i = 0; i < modes.length; i++) {
+            modes[i] = i < stored.length ? stored[i] : FIELD_KEY[i];
         }
-        return value;
+        if (stored.length != modes.length) {
+            writeValue(String.join(":", modes));
+        }
+        return modes;
     }
 
     protected void writePackage(String packageName, int mode) {
-        String value = getValue();
-        value = value.replace(packageName + ",", "");
-        String[] modes = value.split(":");
-        String finalString;
-
-        switch (mode) {
-            case STATE_MEDIUM:
-                modes[0] = modes[0] + packageName + ",";
-                break;
-            case STATE_HIGH:
-                modes[1] = modes[1] + packageName + ",";
-                break;
-            case STATE_EXTREME:
-                modes[2] = modes[2] + packageName + ",";
-                break;
+        String[] modes = getModes();
+        for (int i = 0; i < modes.length; i++) {
+            modes[i] = modes[i].replace(packageName + ",", "");
         }
-
-        finalString = modes[0] + ":" + modes[1] + ":" + modes[2];
-
-        writeValue(finalString);
+        if (mode > STATE_DEFAULT && mode < STATE_FIELD.length) {
+            modes[STATE_FIELD[mode]] += packageName + ",";
+        }
+        writeValue(String.join(":", modes));
     }
 
     protected int getStateForPackage(String packageName) {
-        String value = getValue();
-        String[] modes = value.split(":");
-        int state = STATE_DEFAULT;
-        if (modes[0].contains(packageName + ",")) {
-            state = STATE_MEDIUM;
-        } else if (modes[1].contains(packageName + ",")) {
-            state = STATE_HIGH;
-        } else if (modes[2].contains(packageName + ",")) {
-            state = STATE_EXTREME;
+        String[] modes = getModes();
+        for (int state = STATE_MEDIUM; state < STATE_FIELD.length; state++) {
+            if (modes[STATE_FIELD[state]].contains(packageName + ",")) {
+                return state;
+            }
         }
-        return state;
+        return STATE_DEFAULT;
     }
 
     protected static void setDefaultRefreshRate(Context context) {
@@ -141,9 +128,6 @@ public final class RefreshUtils {
     }
 
     protected void setRefreshRate(String packageName) {
-        String value = getValue();
-        String modes[];
-
         if (!isAppInList) {
             defaultMaxRate = Settings.System.getFloat(mContext.getContentResolver(), KEY_PEAK_REFRESH_RATE, REFRESH_STATE_DEFAULT);
             defaultMinRate = Settings.System.getFloat(mContext.getContentResolver(), KEY_MIN_REFRESH_RATE, REFRESH_STATE_DEFAULT);
@@ -152,29 +136,11 @@ public final class RefreshUtils {
         float minrate = defaultMinRate;
         float maxrate = defaultMaxRate;
 
-        if (value != null) {
-            modes = value.split(":");
-            if (modes[0].contains(packageName + ",")) {
-                maxrate = REFRESH_STATE_MEDIUM;
-                if ( minrate > maxrate){
-                minrate = maxrate;
-                }
-                isAppInList = true;
-                } else if (modes[1].contains(packageName + ",")) {
-                maxrate = REFRESH_STATE_HIGH;
-                if ( minrate > maxrate){
-                minrate = maxrate;
-                }
-                isAppInList = true;
-                } else if (modes[2].contains(packageName + ",")) {
-                maxrate = REFRESH_STATE_EXTREME;
-                if ( minrate > maxrate){
-                minrate = maxrate;
-                }
-                isAppInList = true;
-            } else {
-                isAppInList = false;
-            }
+        int state = getStateForPackage(packageName);
+        isAppInList = state != STATE_DEFAULT;
+        if (isAppInList) {
+            maxrate = STATE_RATE[state];
+            minrate = Math.min(minrate, maxrate);
         }
         Settings.System.putFloat(mContext.getContentResolver(), KEY_PEAK_REFRESH_RATE, maxrate);
         Settings.System.putFloat(mContext.getContentResolver(), KEY_MIN_REFRESH_RATE, minrate);

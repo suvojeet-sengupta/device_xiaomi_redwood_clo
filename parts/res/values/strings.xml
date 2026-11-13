@@ -49,6 +49,8 @@
     <string name="refresh_default">Default</string>
     <string name="refresh_medium">Medium (60Hz)</string>
     <string name="refresh_high">High (90Hz)</string>
+    <string name="refresh_100">Higher (100Hz)</string>
+    <string name="refresh_110">Very high (110Hz)</string>
     <string name="refresh_extreme">Extreme (120Hz)</string>
 
 
