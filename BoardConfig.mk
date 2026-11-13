@@ -99,9 +99,12 @@ BOARD_KERNEL_CMDLINE += androidboot.init_fatal_reboot_target=recovery
 BOARD_KERNEL_CMDLINE += clk_ignore_unused pd_ignore_unused
 BOARD_KERNEL_CMDLINE += binder.impl=rust
 BOARD_KERNEL_CMDLINE += iommu.strict=1
-# Wait for every deferred probe: the vendor modules come up in an order
-# 6.18 would otherwise give up on
-BOARD_KERNEL_CMDLINE += deferred_probe_timeout=-1
+# Give deferred probes 30 s after the last driver registers, then sync the
+# suppliers whose consumers never get a driver here (the unused eMMC host
+# 7c4000.sdhci, the FM radio). With -1 their sync_state never ran: the
+# interconnects kept their boot-time INT_MAX votes, DDR stayed at
+# 1555-2092 MHz and AOSS, CX and DDR sleep were never reached.
+BOARD_KERNEL_CMDLINE += deferred_probe_timeout=30 fw_devlink.sync_state=timeout
 # 6.18 checks netlink messages against allowxperm rules the 6.12-era vendor
 # policy doesn't have; fall back to nlmsg_read/nlmsg_write for those
 BOARD_KERNEL_CMDLINE += redwood.nlmsg_legacy
