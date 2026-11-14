@@ -13,6 +13,12 @@ aaudio.mmap_policy=1
 debug.sf.enable_advanced_sf_phase_offset=0
 debug.sf.high_fps_early_gl_phase_offset_ns=-6500000
 debug.sf.high_fps_late_sf_phase_offset_ns=-4000000
+# Latch unsignaled buffers only for single layer updates, the Android 13+
+# default. Latching every buffer unsignaled can let GPU composition read
+# app buffers the GPU hasn't finished; white and garbage frames showed up
+# mostly with the keyboard open, a multi-layer update
+debug.sf.auto_latch_unsignaled=1
+debug.sf.latch_unsignaled=0
 persist.sys.sf.color_mode=0
 persist.vendor.audio.bcl.enabled=false
 persist.vendor.audio.fluence.voicerec=true
