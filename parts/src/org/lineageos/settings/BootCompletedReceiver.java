@@ -27,6 +27,7 @@ import android.hardware.display.DisplayManager;
 import android.util.Log;
 import android.view.Display.HdrCapabilities;
 
+import org.lineageos.settings.appops.ForegroundServiceOps;
 import org.lineageos.settings.dcdimming.DcDimmingUtils;
 import org.lineageos.settings.utils.FileUtils;
 import org.lineageos.settings.thermal.ThermalUtils;
@@ -56,6 +57,7 @@ public class BootCompletedReceiver extends BroadcastReceiver {
     
     private static void onBootCompleted(Context context) {
         // Data is now accessible (user has just unlocked).
+        ForegroundServiceOps.restore(context);
         RefreshUtils.initialize(context);
         ThermalUtils.startService(context);
         DcDimmingUtils.restore(context);
