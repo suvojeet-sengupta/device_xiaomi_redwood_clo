@@ -278,7 +278,8 @@ configure_memory_parameters
 # msm_irqbalance's way (it ignores them by their GIC numbers). Look them
 # up by name, the Linux IRQ numbers moved on 6.12
 for irq in msm_drm:2 kgsl_3d0_irq:1; do
-	n=$(awk -v name="${irq%:*}" '$NF == name { sub(":", "", $1); print $1 }' /proc/interrupts)
+	line=$(grep -m1 " ${irq%:*}\$" /proc/interrupts)
+	n=$(echo ${line%%:*})
 	[ -n "$n" ] && echo ${irq#*:} > /proc/irq/$n/smp_affinity_list
 done
 
