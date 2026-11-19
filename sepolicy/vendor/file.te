@@ -1,3 +1,6 @@
 # IR
 type lirc_device, dev_type;
 type vendor_sysfs_thermal_flash, sysfs_type, fs_type;
+
+# Thermal HAL
+type thermal_link_device, dev_type;

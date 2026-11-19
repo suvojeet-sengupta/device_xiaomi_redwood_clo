@@ -13,3 +13,6 @@ persist.vendor.sys.provision.status u:object_r:vendor_mlipay_prop:s0
 
 # rild (IMEI and serial numbers)
 ro.vendor.oem.                      u:object_r:vendor_oem_prop:s0
+
+# Thermal HAL
+vendor.thermal.                     u:object_r:vendor_thermal_prop:s0
