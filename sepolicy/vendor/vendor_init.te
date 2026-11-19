@@ -1,2 +1,4 @@
 set_prop(vendor_init, vendor_camera_prop)
 set_prop(vendor_init, vendor_ims_prop)
+allow vendor_init thermal_data_file:dir create_dir_perms;
+allow vendor_init thermal_data_file:file create_file_perms;

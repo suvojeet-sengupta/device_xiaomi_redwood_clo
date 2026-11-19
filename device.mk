@@ -257,6 +257,8 @@ $(call soong_config_set_bool,lineage_health,charging_control_supports_bypass,tru
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/rootdir/etc/init.batterysecret.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/hw/init.batterysecret.rc \
     $(LOCAL_PATH)/rootdir/etc/init.mi_thermald.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/hw/init.mi_thermald.rc \
+    $(LOCAL_PATH)/configs/thermal/mi_thermald/thermal-normal.conf:$(TARGET_COPY_OUT_VENDOR)/etc/thermal-redwood/thermal-normal.conf \
+    $(LOCAL_PATH)/configs/thermal/mi_thermald/thermal-india-normal.conf:$(TARGET_COPY_OUT_VENDOR)/etc/thermal-redwood/thermal-india-normal.conf \
     $(LOCAL_PATH)/rootdir/etc/init.lahaina.perf.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/hw/init.lahaina.perf.rc \
     $(LOCAL_PATH)/rootdir/etc/init.qcom.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/hw/init.qcom.rc \
     $(LOCAL_PATH)/rootdir/etc/init.qti.kernel.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/hw/init.qti.kernel.rc \

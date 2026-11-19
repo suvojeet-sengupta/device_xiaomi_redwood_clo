@@ -1,3 +1,13 @@
+on post-fs-data
+    mkdir /data/vendor/thermal 0771 root system
+    mkdir /data/vendor/thermal/config 0771 root system
+    copy /vendor/etc/thermal-redwood/thermal-normal.conf /data/vendor/thermal/config/thermal-normal.conf
+    copy /vendor/etc/thermal-redwood/thermal-india-normal.conf /data/vendor/thermal/config/thermal-india-normal.conf
+    chown system system /data/vendor/thermal/config/thermal-normal.conf
+    chown system system /data/vendor/thermal/config/thermal-india-normal.conf
+    chmod 0644 /data/vendor/thermal/config/thermal-normal.conf
+    chmod 0644 /data/vendor/thermal/config/thermal-india-normal.conf
+
 on charger
     wait /sys/class/power_supply/usb/type
     start vendor.mi_thermald
@@ -11,8 +21,6 @@ service vendor.mi_thermald /vendor/bin/mi_thermald
     group system
     seclabel u:r:mi_thermald:s0
 
-# Thermal scene 10, FKM's "Dynamic (evaluation)" (thermal-nolimits). The
-# default scene caps charging at 1.2 A with the screen on from about 36 C;
-# this one limits it far less and leaves the CPUs alone until 51 C.
+# Scene 0 runs redwood's own normal configs from /data/vendor/thermal/config.
 on property:sys.boot_completed=1
-    write /sys/class/thermal/thermal_message/sconfig 10
+    write /sys/class/thermal/thermal_message/sconfig 0
