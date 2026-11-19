@@ -43,11 +43,14 @@ fingerprint() {
 echo "==> Adding the redwood local manifest"
 mkdir -p .repo/local_manifests
 cp "$HERE/redwood.xml" .repo/local_manifests/redwood.xml
-# Trees whose own manifest has ParanoidSense (PenguinOS) would get it twice
-if grep -rqs 'path="packages/apps/ParanoidSense"' .repo/manifests/; then
-    sed -i '/path="packages\/apps\/ParanoidSense"/d' .repo/local_manifests/redwood.xml
-    echo "    ParanoidSense comes from the ROM's manifest"
-fi
+# Trees whose own manifest has these (PenguinOS has ParanoidSense) would get
+# them twice
+for p in packages/apps/ParanoidSense hardware/google/pixel; do
+    if grep -rqs "path=\"$p\"" .repo/manifests/; then
+        sed -i "\\|path=\"$p\"|d" .repo/local_manifests/redwood.xml
+        echo "    $p comes from the ROM's manifest"
+    fi
+done
 
 echo "==> Syncing the redwood repos"
 paths=$(grep -oE 'path="[^"]+"' .repo/local_manifests/redwood.xml | cut -d'"' -f2)
