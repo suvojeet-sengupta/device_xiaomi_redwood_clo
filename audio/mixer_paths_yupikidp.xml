@@ -556,6 +556,7 @@
     <ctl name="aw_dev_0_prof" value="Music" />
     <ctl name="aw_dev_0_switch" value="Enable" />
     <ctl name="aw_dev_1_switch" value="Disable" />
+    <ctl name="AW_L PCM Playback Volume" value="0" />
     <path name="deep-buffer-playback speaker">
         <ctl name="PRI_TDM_RX_0 Audio Mixer MultiMedia1" value="1" />
     </path>
@@ -2624,6 +2625,11 @@
         <ctl name="aw_dev_0_prof" value="Receiver" />
         <ctl name="aw_dev_0_switch" value="Enable" />
         <ctl name="aw_dev_1_switch" value="Disable" />
+        <!-- The bottom amp restarts with the shared TDM whenever a stream
+             starts or stops and fades in before the switch mutes it again.
+             Fade it in to full attenuation, so the call never leaks to the
+             bottom speaker. -->
+        <ctl name="AW_L PCM Playback Volume" value="720" />
     </path>
     <path name="headphones">
         <ctl name="RX_MACRO RX0 MUX" value="AIF1_PB" />
