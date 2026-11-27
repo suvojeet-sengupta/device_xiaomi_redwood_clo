@@ -123,6 +123,9 @@ ro.soc.manufacturer=QTI
 ro.crypto.dm_default_key.options_format.version=2
 ro.crypto.volume.metadata.method=dm-default-key
 
+# Dalvik
+dalvik.vm.dex2oat64.enabled=true
+
 # DPM
 persist.vendor.dpm.feature=1
 persist.vendor.dpm.idletimer.mode=default
@@ -142,6 +145,7 @@ debug.sf.high_fps_early_phase_offset_ns=-4000000
 debug.sf.high_fps_late_app_phase_offset_ns=1000000
 debug.sf.defer_refresh_rate_when_off=1
 debug.sf.enable_egl_image_tracker=0
+debug.sf.enable_gl_backpressure=0
 debug.sf.treat_170m_as_sRGB=1
 persist.sys.sf.color_saturation=1.0
 persist.sys.sf.native_mode=268
