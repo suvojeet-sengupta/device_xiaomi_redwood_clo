@@ -63,3 +63,6 @@ genfscon sysfs /devices/platform/soc/aa00000.qcom,vidc/sku_version u:object_r:ve
 genfscon sysfs /devices/virtual/thermal/thermal_message/flash_state u:object_r:vendor_sysfs_thermal_flash:s0
 genfscon sysfs /devices/platform/soc/c440000.qcom,spmi/spmi-0/spmi0-00/c440000.qcom,spmi:qcom,pmk8350@0:pon@1300/c440000.qcom,spmi:qcom,pmk8350@0:pon@1300:pwrkey/wakeup u:object_r:sysfs_wakeup:s0
 genfscon sysfs /devices/platform/soc/c440000.qcom,spmi/spmi-0/spmi0-00/c440000.qcom,spmi:qcom,pmk8350@0:rtc@6100/rtc/rtc0/alarmtimer u:object_r:sysfs_wakeup:s0
+
+# 6.18: sched_boost comes from the CASS module
+genfscon proc /sys/kernel/sched_boost u:object_r:vendor_proc_sched_boost:s0

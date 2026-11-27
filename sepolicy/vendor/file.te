@@ -4,3 +4,6 @@ type vendor_sysfs_thermal_flash, sysfs_type, fs_type;
 
 # Thermal HAL
 type thermal_link_device, dev_type;
+
+# sched_boost from the CASS module, set by the perf HAL
+type vendor_proc_sched_boost, fs_type, proc_type;
