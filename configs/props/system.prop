@@ -83,3 +83,11 @@ mmd.zram.comp_algorithm=lz4
 mmd.zram.device_priority=32758
 mmd.zram.recompression.enabled=true
 mmd.zram.recompression.algorithm=zstd
+# Pages idle for most of a day go to a 2 GiB file on /data, at most
+# 4 GiB written a day; the loop queue depth comes from the prop so mmd
+# doesn't have to read the UFS queue
+mmd.zram.writeback.enabled=true
+mmd.zram.writeback.device_size=2147483648
+mmd.zram.writeback.max_bytes_per_day=4294967296
+mmd.zram.writeback.use_nr_tags_prop=true
+mmd.zram.writeback.nr_tags=31
