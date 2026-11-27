@@ -435,7 +435,8 @@ TARGET_COMMON_QTI_COMPONENTS := \
 
 # QTI
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/configs/sysconfig/qti_whitelist.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/sysconfig/qti_whitelist.xml
+    $(LOCAL_PATH)/configs/sysconfig/qti_whitelist.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/sysconfig/qti_whitelist.xml \
+    $(LOCAL_PATH)/configs/sysconfig/satellite.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/sysconfig/satellite.xml
 
 # Recovery
 PRODUCT_COPY_FILES += \

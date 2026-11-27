@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    redwood has no satellite modem. Settings' satellite tile receiver still
+    listens for every SERVICE_STATE broadcast, so each service state change
+    unfroze Settings just to find FEATURE_TELEPHONY_SATELLITE missing.
+-->
+<config>
+    <component-override package="com.android.settings">
+        <component class="com.android.settings.network.telephony.satellite.quicksettings.SatelliteTileStateReceiver" enabled="false" />
+    </component-override>
+</config>

@@ -62,6 +62,8 @@ log.tag.NtnCapabilityResolver=S
 log.tag.QtiLinkBandwidthEstimator-0=W
 log.tag.QtiLinkBandwidthEstimator-1=W
 log.tag.SatelliteController=S
+log.tag.SatelliteTileStateReceiver=S
+log.tag.TelephonyConfigUpdateInstallReceiver=S
 
 # Render
 debug.cpurend.vsync=false
