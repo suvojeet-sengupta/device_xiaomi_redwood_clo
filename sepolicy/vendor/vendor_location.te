@@ -1,0 +1,2 @@
+# loc_launcher stops the daemons it started when init restarts it
+allow vendor_location { vendor_location_slim_daemon vendor_location_xtra_daemon }:process { signal sigkill };
