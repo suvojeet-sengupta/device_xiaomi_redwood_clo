@@ -5,3 +5,6 @@ allow vendor_init thermal_data_file:file create_file_perms;
 allow vendor_init thermal_link_device:dir r_dir_perms;
 allow vendor_init thermal_link_device:lnk_file r_file_perms;
 set_prop(vendor_init, vendor_thermal_prop)
+
+# init.qti.kernel.rc turns panic_on_oops back off
+allow vendor_init proc_panic:file w_file_perms;
