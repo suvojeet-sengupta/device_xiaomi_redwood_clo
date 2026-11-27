@@ -28,4 +28,8 @@
     <!-- The PiP shadow forces SurfaceFlinger to GPU-compose the PiP task, which drags
          protected (DRM) video into protected-context GPU composition on every frame. -->
     <dimen name="pip_shadow_radius">0dp</dimen>
+
+    <!-- Blur behind the open shade. SystemUI keeps animating it while the shade is open, so
+         every frame is a GPU blur pass; half the default 34dp keeps the look and cuts the work. -->
+    <dimen name="max_shade_window_blur_radius">17dp</dimen>
 </resources>
