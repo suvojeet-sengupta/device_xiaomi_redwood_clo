@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Standard Android 17 Memory Limiter tiers. This framework reads them
+    from /vendor/etc and keeps the Memory Limiter disabled when the file
+    is missing. RAM boundaries are MemTotal after carve-outs.
+-->
+<MemoryLimiterConfig>
+  <version>1</version>
+  <configList>
+    <limitSet>
+      <!-- 16GB [14336, 18432): 10G/5G/5G/5G -->
+      <minimumRequiredMemTotal>14336</minimumRequiredMemTotal>
+      <maximumAllowedMemTotal>18432</maximumAllowedMemTotal>
+      <memVisible>10240</memVisible>
+      <memNotVisible>5120</memNotVisible>
+      <swapVisible>5120</swapVisible>
+      <swapNotVisible>5120</swapNotVisible>
+    </limitSet>
+    <limitSet>
+      <!-- 12GB [9216, 14336): 8G/4G/4G/4G -->
+      <minimumRequiredMemTotal>9216</minimumRequiredMemTotal>
+      <maximumAllowedMemTotal>14336</maximumAllowedMemTotal>
+      <memVisible>8192</memVisible>
+      <memNotVisible>4096</memNotVisible>
+      <swapVisible>4096</swapVisible>
+      <swapNotVisible>4096</swapNotVisible>
+    </limitSet>
+    <limitSet>
+      <!-- 8GB [6800, 9216): 5G/3G/3G/3G -->
+      <minimumRequiredMemTotal>6800</minimumRequiredMemTotal>
+      <maximumAllowedMemTotal>9216</maximumAllowedMemTotal>
+      <memVisible>5120</memVisible>
+      <memNotVisible>3072</memNotVisible>
+      <swapVisible>3072</swapVisible>
+      <swapNotVisible>3072</swapNotVisible>
+    </limitSet>
+    <limitSet>
+      <!-- 6GB [4800, 6800): 4G/2G/2G/2G -->
+      <minimumRequiredMemTotal>4800</minimumRequiredMemTotal>
+      <maximumAllowedMemTotal>6800</maximumAllowedMemTotal>
+      <memVisible>4096</memVisible>
+      <memNotVisible>2048</memNotVisible>
+      <swapVisible>2048</swapVisible>
+      <swapNotVisible>2048</swapNotVisible>
+    </limitSet>
+    <limitSet>
+      <!-- 4GB [3200, 4800): 2G/1G/1G/1G -->
+      <minimumRequiredMemTotal>3200</minimumRequiredMemTotal>
+      <maximumAllowedMemTotal>4800</maximumAllowedMemTotal>
+      <memVisible>2048</memVisible>
+      <memNotVisible>1024</memNotVisible>
+      <swapVisible>1024</swapVisible>
+      <swapNotVisible>1024</swapNotVisible>
+    </limitSet>
+  </configList>
+</MemoryLimiterConfig>

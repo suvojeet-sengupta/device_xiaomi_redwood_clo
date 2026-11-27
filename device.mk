@@ -296,6 +296,10 @@ PRODUCT_COPY_FILES += \
 
 $(call soong_config_set_bool,stagefright,target_disable_thumbnail_block_model,true)
 
+# Memory Limiter
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/memory/memory-limiter-config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/memory-limiter-config.xml
+
 # Native libraries whitelist
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/public.libraries.txt:$(TARGET_COPY_OUT_VENDOR)/etc/public.libraries.txt
